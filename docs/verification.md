@@ -31,10 +31,12 @@ Before committing, inspect every changed file in VS Code Source Control. Confirm
 
 ## Recorded observations
 
-Verified on September 9, 2026 with Python 3.14.7, FastAPI 0.141.1, Uvicorn 0.52.4, Node 24.12.0, npm 11.6.2, Vue 3.5.42, and Vite 8.2.2.
+Verified on September 9-10, 2026 with Python 3.14.7, FastAPI 0.141.1, Uvicorn 0.52.4, Node 24.12.0, npm 11.6.2, Vue 3.5.42, and Vite 8.2.2.
 
 | Check | Observed result | Status |
 | --- | --- | --- |
+| Manual VS Code Source Control review | Completed a file-by-file Source Control review. Confirmed `backend/app/search.py` is the only layer reading CSVs and joins hotels to trips on `hotel_id`; `frontend/src/App.vue` calls the FastAPI endpoint and supplies headings for all eight table columns; no SQLite or booking CRUD code is present. | Pass |
+| CHECK → TAKE ACTION → VERIFY dependency cycle | CHECK used Python 3.14.7 at `backend/.venv/bin/python`, Node v24.12.0, and npm 11.6.2; FastAPI/Uvicorn and the project-local Vue packages required installation. TAKE ACTION installed `backend/requirements.txt` into `backend/.venv` and the frontend packages into `frontend/node_modules`. VERIFY reran the version commands and successfully imported FastAPI 0.141.1 and Uvicorn 0.52.4 from the project interpreter. | Pass |
 | Backend pytest suite | 5 tests passed. | Pass |
 | Frontend production build | Vite transformed 11 modules and completed the build. | Pass |
 | Initial page | Heading, labeled city input, Search button, and guidance were visible. | Pass |
@@ -44,4 +46,4 @@ Verified on September 9, 2026 with Python 3.14.7, FastAPI 0.141.1, Uvicorn 0.52.
 | Whitespace-only city | “Enter a city to search for available stays.” appeared; zero tables remained. | Pass |
 | Browser console | No warning or error entries were recorded. | Pass |
 
-Evidence: [Boston results](screenshots/part1-boston-results.jpg) and [Miami no-results state](screenshots/part1-miami-no-results.jpg).
+Evidence: [Boston results](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-miami-no-results.jpg).
