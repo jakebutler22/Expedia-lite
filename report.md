@@ -2,9 +2,9 @@
 
 ## Repository and commit
 
-Repository URL: Not configured in the local repository. Replace this sentence with the GitHub repository URL before submission.
+Repository URL: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
 
-Exact Part 1 implementation commit: `cf2f1945bb9fcec38842530caf25657bd2385f1f`
+Exact Part 1 implementation commit: [`cf2f1945bb9fcec38842530caf25657bd2385f1f`](https://github.com/jakebutler22/Expedia-lite/commit/cf2f1945bb9fcec38842530caf25657bd2385f1f)
 
 ## Implementation
 
@@ -25,16 +25,16 @@ Verification was performed on September 9, 2026.
 | Submit whitespace-only input | The interface asks for a city without showing stale results. | “Enter a city to search for available stays.” appeared; the page contained zero tables. |
 | Inspect the browser console | No application warnings or errors. | No warning or error entries were recorded. |
 
-Screenshots: [Boston search results](docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](docs/screenshots/part1-miami-no-results.jpg).
+Screenshots: [Boston search results](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/docs/screenshots/part1-miami-no-results.jpg).
 
 ## Project context and next steps
 
-- [Setup and run instructions](README.md)
-- [Project-specific agent instructions](AGENTS.md)
-- [Design pipeline](docs/design-pipeline.md)
-- [Verification procedure](docs/verification.md)
-- [Selected setup prompt](prompts/01-project-setup.md)
-- [Selected Part 1 prompt](prompts/02-part-1-search.md)
-- [Current handoff](handoffs/current.md)
+- [Setup and run instructions](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/README.md)
+- [Project-specific agent instructions](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/AGENTS.md)
+- [Design pipeline](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/docs/design-pipeline.md)
+- [Verification procedure](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/docs/verification.md)
+- [Selected setup prompt](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/prompts/01-project-setup.md)
+- [Selected Part 1 prompt](https://github.com/jakebutler22/Expedia-lite/blob/cf2f1945bb9fcec38842530caf25657bd2385f1f/prompts/02-part-1-search.md)
+- [Current handoff](https://github.com/jakebutler22/Expedia-lite/blob/main/handoffs/current.md)
 
 Remaining limitation: Part 1 reads CSV files and does not persist data. The next task is Part 2: seed SQLite once and add booking create, read, cancel, and delete workflows through FastAPI and Vue while preserving this Part 1 checkpoint.
