@@ -2,9 +2,9 @@
 
 ## Repository and commit
 
-Repository URL: Add the GitHub repository URL before submission.
+Repository URL: Not configured in the local repository. Replace this sentence with the GitHub repository URL before submission.
 
-Exact Part 1 commit: Add the final commit hash after the reviewed work is committed.
+Exact Part 1 implementation commit: `cf2f1945bb9fcec38842530caf25657bd2385f1f`
 
 ## Implementation
 
