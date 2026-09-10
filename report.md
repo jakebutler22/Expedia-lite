@@ -4,9 +4,7 @@
 
 Repository URL: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
 
-Part 1 implementation commit: [`cf2f1945bb9fcec38842530caf25657bd2385f1f`](https://github.com/jakebutler22/Expedia-lite/commit/cf2f1945bb9fcec38842530caf25657bd2385f1f).
-
-Submitted checkpoint: this commit, titled `Complete Part 1 verification evidence and report`. It contains the verified implementation, completed report and handoff, and regenerated browser evidence. Its exact hash is recorded in the immediately following documentation commit and by the annotated Git tag `part1-submission`.
+Submitted Part 1 checkpoint: [`99b6371568077526db3a25ec4634aa3bc1345aad`](https://github.com/jakebutler22/Expedia-lite/commit/99b6371568077526db3a25ec4634aa3bc1345aad) (`Complete Part 1 verification evidence and report`). It contains the completed report, handoff, regenerated browser evidence, and the verified application implementation introduced in commit [`cf2f1945bb9fcec38842530caf25657bd2385f1f`](https://github.com/jakebutler22/Expedia-lite/commit/cf2f1945bb9fcec38842530caf25657bd2385f1f). The annotated Git tag `part1-submission` points to this submitted checkpoint.
 
 ## Implementation
 
@@ -29,16 +27,16 @@ Verification was performed on September 9, 2026.
 | Submit whitespace-only input | The interface asks for a city without showing stale results. | “Enter a city to search for available stays.” appeared; the page contained zero tables. |
 | Inspect the browser console | No application warnings or errors. | No warning or error entries were recorded. |
 
-Screenshots: [Boston search results](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-miami-no-results.jpg).
+Screenshots: [Boston search results](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/docs/screenshots/part1-miami-no-results.jpg).
 
 ## Project context and next steps
 
-- [Setup and run instructions](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/README.md)
-- [Project-specific agent instructions](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/AGENTS.md)
-- [Design pipeline](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/design-pipeline.md)
-- [Verification procedure](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/verification.md)
-- [Selected setup prompt](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/prompts/01-project-setup.md)
-- [Selected Part 1 prompt](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/prompts/02-part-1-search.md)
-- [Current handoff](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/handoffs/current.md)
+- [Setup and run instructions](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/README.md)
+- [Project-specific agent instructions](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/AGENTS.md)
+- [Design pipeline](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/docs/design-pipeline.md)
+- [Verification procedure](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/docs/verification.md)
+- [Selected setup prompt](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/prompts/01-project-setup.md)
+- [Selected Part 1 prompt](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/prompts/02-part-1-search.md)
+- [Current handoff](https://github.com/jakebutler22/Expedia-lite/blob/99b6371568077526db3a25ec4634aa3bc1345aad/handoffs/current.md)
 
 Remaining limitation: Part 1 reads CSV files and does not persist data. The next task is Part 2: seed SQLite once and add booking create, read, cancel, and delete workflows through FastAPI and Vue while preserving this Part 1 checkpoint.
