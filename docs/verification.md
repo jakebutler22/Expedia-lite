@@ -46,4 +46,4 @@ Verified on September 9-10, 2026 with Python 3.14.7, FastAPI 0.141.1, Uvicorn 0.
 | Whitespace-only city | “Enter a city to search for available stays.” appeared; zero tables remained. | Pass |
 | Browser console | No warning or error entries were recorded. | Pass |
 
-Evidence: [Boston results](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/part1-submission/docs/screenshots/part1-miami-no-results.jpg).
+Evidence: [Boston results](https://github.com/jakebutler22/Expedia-lite/blob/9cece9b63a73802ff7921acb068bd3fddc62905a/docs/screenshots/part1-boston-results.jpg) and [Miami no-results state](https://github.com/jakebutler22/Expedia-lite/blob/9cece9b63a73802ff7921acb068bd3fddc62905a/docs/screenshots/part1-miami-no-results.jpg).
