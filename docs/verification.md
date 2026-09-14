@@ -13,6 +13,10 @@ npm --prefix frontend run build
 
 Expected: all backend tests pass and Vite completes a production build without errors.
 
+## SQLite environment verification
+
+Verified on September 14, 2026 using the project interpreter at `backend/.venv/bin/python` (resolved path: `/Users/jakebutler/Documents/ChatGPT/Expedia-lite/backend/.venv/bin/python`). The interpreter runs Python 3.14.7 and imports the standard-library `sqlite3` module with SQLite 3.50.4. No installation was required. A temporary database outside the repository successfully retained a sample row after the connection was closed and reopened.
+
 ## Browser SmokeTest
 
 Start the API and frontend as described in `README.md`, then check:
