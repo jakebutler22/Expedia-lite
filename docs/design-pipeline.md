@@ -41,7 +41,7 @@ The marker and starter inserts share one transaction. A failed import rolls back
 Hotel name or city + Search
             |
             v
-GET /api/stays?city=<query>
+GET /api/stays?query=<query>
             |
             v
 FastAPI obtains a SQLite connection
@@ -58,6 +58,8 @@ JSON response -> Vue results table or no-results state
 ```
 
 Hotel-name matching is trimmed, case-insensitive, and partial; city matching is trimmed, case-insensitive, and exact. The existing Part 1 table headings and calculated nights × nightly-rate price remain intact.
+
+`query` is the preferred request parameter. The API continues to accept `city` as a deprecated alias so existing Part 1 clients keep working.
 
 ## Booking CRUD pipeline
 

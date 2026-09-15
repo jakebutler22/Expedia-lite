@@ -86,6 +86,24 @@ Verified on September 14, 2026 against `backend/data/expedia-lite.db` using back
 
 Evidence: [created booking](screenshots/part2-created.jpg), [cancelled booking](screenshots/part2-cancelled.jpg), [deleted test booking](screenshots/part2-deleted.jpg), and [persistence after full restart](screenshots/part2-restart-persistence.jpg).
 
+### Verification-hardening rerun
+
+Re-verified on September 15, 2026 on branch `part2-verification-hardening`. The first backend/Vite pair was fully stopped, both applications were restarted against the same SQLite file, and the restarted pair was also stopped after verification. No unrelated process was stopped.
+
+| Check | Observed result | Status |
+| --- | --- | --- |
+| Backend test suite | `backend/.venv/bin/python -m pytest backend/tests` collected 26 tests; all 26 passed in 0.24 seconds. The suite includes `query` and deprecated `city` parameter coverage, with `Harbor` returning T001 and T009 for each. | Pass |
+| Frontend production build | `npm --prefix frontend run build` transformed 11 modules and completed in 148 milliseconds. | Pass |
+| Browser searches | Partial hotel name `Harbor` returned T001 and T009; city `Boston` returned exactly T001, T002, T009, and T010; `Miami` showed the clear no-results message with no results table. | Pass |
+| Browser create and cancel | Created B009 for U006 through the results table, then cancelled it through history. B009 remained visible with status `cancelled`; previously retained B007 also remained `cancelled`. | Pass |
+| Browser delete | Created disposable B010, used the in-page **Delete permanently** control, and confirmed B010 disappeared from history. | Pass |
+| Browser refresh | B007 and B009 remained visible and `cancelled`; deleted B008 and B010 remained absent. | Pass |
+| Full process restart | Fully stopped and restarted both test-started applications. B007 and B009 remained visible and `cancelled`; B008 and B010 did not return. | Pass |
+| Seed and row counts after restart | SQLite contained 8 hotels, 12 trips, 6 users, and 8 bookings. Each supplied booking B001–B006 occurred exactly once, the seed marker count was 1, and the next booking number was 11. | Pass |
+| Browser console and dialogs | No warning or error entries and no active JavaScript dialog were present. | Pass |
+
+The four JPEGs above were recaptured from clean 1280-pixel-wide browser frames. They show the complete page without the prior duplicated footer or clipped partial row; the restart image keeps the traveler selector, full booking-history rows, and status badges legible together.
+
 ## Manual source review
 
 Before committing, inspect every changed file in VS Code Source Control. Confirm only the one-time database initializer reads CSV files; all application reads and writes use SQLite; calculation and data rules remain independent of FastAPI; the frontend performs search, create, history, cancel, and delete through FastAPI; and cancel and delete remain visibly and behaviorally distinct.

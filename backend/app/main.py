@@ -90,17 +90,29 @@ def create_app(
     @application.get("/api/stays", response_model=SearchResponse)
     def get_stays(
         connection: DatabaseConnection,
-        city: str = Query(
-            ...,
-            description="Hotel name or full city name, matched case-insensitively",
+        query: str | None = Query(
+            None,
+            description="Hotel name or city, matched case-insensitively",
+        ),
+        city: str | None = Query(
+            None,
+            deprecated=True,
+            description="Deprecated alias for query; matches a hotel name or city",
         ),
     ) -> SearchResponse:
+        search_query = query if query is not None else city
+        if search_query is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Provide query with a hotel name or city.",
+            )
+
         try:
-            stays = search_stays(connection, city)
+            stays = search_stays(connection, search_query)
         except InvalidSearchQueryError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
 
-        normalized_query = normalize_search_term(city)
+        normalized_query = normalize_search_term(search_query)
         return SearchResponse(
             query=normalized_query,
             count=len(stays),

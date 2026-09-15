@@ -44,13 +44,39 @@ def test_hotel_name_and_no_match_searches(
 
 
 def test_api_returns_search_metadata_and_stays(client: TestClient) -> None:
-    response = client.get("/api/stays", params={"city": "New York"})
+    response = client.get("/api/stays", params={"query": "New York"})
 
     assert response.status_code == 200
     body = response.json()
     assert body["query"] == "New York"
     assert body["count"] == 3
     assert [stay["trip_id"] for stay in body["stays"]] == ["T003", "T004", "T011"]
+
+
+@pytest.mark.parametrize("parameter_name", ["query", "city"])
+def test_api_accepts_preferred_query_and_deprecated_city_alias(
+    client: TestClient,
+    parameter_name: str,
+) -> None:
+    response = client.get("/api/stays", params={parameter_name: "Harbor"})
+
+    assert response.status_code == 200
+    assert [stay["trip_id"] for stay in response.json()["stays"]] == [
+        "T001",
+        "T009",
+    ]
+
+
+def test_openapi_describes_search_parameters(client: TestClient) -> None:
+    parameters = client.get("/openapi.json").json()["paths"]["/api/stays"]["get"][
+        "parameters"
+    ]
+    parameters_by_name = {parameter["name"]: parameter for parameter in parameters}
+
+    assert parameters_by_name["query"]["description"] == (
+        "Hotel name or city, matched case-insensitively"
+    )
+    assert parameters_by_name["city"]["deprecated"] is True
 
 
 def test_api_rejects_blank_search_query(client: TestClient) -> None:
