@@ -2,7 +2,7 @@
 
 ## Repository and commit
 
-Repository URL: [https://github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite/tree/350e77d869b0c55b2d257612446321928a350c41)
+Repository URL: [https://github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
 
 Repository snapshot: [github.com/jakebutler22/Expedia-lite at the submitted checkpoint](https://github.com/jakebutler22/Expedia-lite/tree/350e77d869b0c55b2d257612446321928a350c41)
 
