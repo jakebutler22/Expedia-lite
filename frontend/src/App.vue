@@ -78,7 +78,7 @@ async function search() {
 
   loading.value = true
   try {
-    const response = await fetch(`${API_URL}/api/stays?city=${encodeURIComponent(searchTerm)}`)
+    const response = await fetch(`${API_URL}/api/stays?query=${encodeURIComponent(searchTerm)}`)
     if (!response.ok) {
       throw new Error(await getErrorMessage(response, 'The search service returned an error.'))
     }
