@@ -1,60 +1,55 @@
-import csv
-from datetime import date
-from pathlib import Path
+import sqlite3
 
-from .models import Stay
+from .domain import build_stay_record, escape_like_pattern, normalize_search_term
 
 
-DATA_DIRECTORY = Path(__file__).resolve().parent.parent / "data"
-HOTELS_FILE = DATA_DIRECTORY / "hotels.csv"
-TRIPS_FILE = DATA_DIRECTORY / "trips.csv"
+class InvalidSearchQueryError(ValueError):
+    pass
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
-    """Read an instructor-supplied UTF-8 CSV, including files with a BOM."""
+def search_stays(
+    connection: sqlite3.Connection,
+    query: str,
+) -> list[dict[str, str | int | float]]:
+    """Search joined stays by partial hotel name or exact city."""
 
-    with path.open(newline="", encoding="utf-8-sig") as csv_file:
-        return list(csv.DictReader(csv_file))
+    normalized_query = normalize_search_term(query)
+    if not normalized_query:
+        raise InvalidSearchQueryError("Enter a hotel name or city to search.")
 
+    hotel_name_pattern = f"%{escape_like_pattern(normalized_query)}%"
+    rows = connection.execute(
+        """
+        SELECT
+            trips.trip_id,
+            trips.trip_name,
+            trips.check_in,
+            trips.check_out,
+            hotels.hotel_id,
+            hotels.hotel_name,
+            hotels.city,
+            hotels.state,
+            hotels.nightly_rate_usd
+        FROM trips
+        JOIN hotels ON hotels.hotel_id = trips.hotel_id
+        WHERE hotels.hotel_name COLLATE NOCASE LIKE ? ESCAPE '\\'
+           OR hotels.city = ? COLLATE NOCASE
+        ORDER BY trips.trip_id
+        """,
+        (hotel_name_pattern, normalized_query),
+    ).fetchall()
 
-def search_stays(city: str) -> list[Stay]:
-    """Return trips whose joined hotel city equals the normalized query."""
-
-    normalized_city = city.strip().casefold()
-    if not normalized_city:
-        return []
-
-    hotels_by_id = {
-        hotel["hotel_id"]: hotel
-        for hotel in _read_csv(HOTELS_FILE)
-        if hotel["city"].strip().casefold() == normalized_city
-    }
-
-    stays: list[Stay] = []
-    for trip in _read_csv(TRIPS_FILE):
-        hotel = hotels_by_id.get(trip["hotel_id"])
-        if hotel is None:
-            continue
-
-        check_in = date.fromisoformat(trip["check_in"])
-        check_out = date.fromisoformat(trip["check_out"])
-        nights = (check_out - check_in).days
-        nightly_rate = float(hotel["nightly_rate_usd"])
-
-        stays.append(
-            Stay(
-                trip_id=trip["trip_id"],
-                trip_name=trip["trip_name"],
-                hotel_id=hotel["hotel_id"],
-                hotel_name=hotel["hotel_name"],
-                city=hotel["city"],
-                state=hotel["state"],
-                check_in=trip["check_in"],
-                check_out=trip["check_out"],
-                nights=nights,
-                nightly_rate_usd=nightly_rate,
-                stay_price_usd=nightly_rate * nights,
-            )
+    return [
+        build_stay_record(
+            trip_id=row["trip_id"],
+            trip_name=row["trip_name"],
+            hotel_id=row["hotel_id"],
+            hotel_name=row["hotel_name"],
+            city=row["city"],
+            state=row["state"],
+            check_in=row["check_in"],
+            check_out=row["check_out"],
+            nightly_rate_usd=row["nightly_rate_usd"],
         )
-
-    return stays
+        for row in rows
+    ]

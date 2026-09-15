@@ -1,30 +1,49 @@
+import sqlite3
+
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.search import search_stays
 
 
-client = TestClient(app)
+def test_boston_search_joins_hotels_and_trips(
+    connection: sqlite3.Connection,
+) -> None:
+    stays = search_stays(connection, "Boston")
+
+    assert [stay["trip_id"] for stay in stays] == ["T001", "T002", "T009", "T010"]
+    assert stays[0]["hotel_name"] == "Harbor Lantern Hotel"
+    assert stays[0]["nights"] == 2
+    assert stays[0]["stay_price_usd"] == 300
 
 
-def test_boston_search_joins_hotels_and_trips() -> None:
-    stays = search_stays("Boston")
+def test_city_search_is_case_insensitive_and_trims_spaces(
+    connection: sqlite3.Connection,
+) -> None:
+    stays = search_stays(connection, "  bOsToN  ")
 
-    assert [stay.trip_id for stay in stays] == ["T001", "T002", "T009", "T010"]
-    assert stays[0].hotel_name == "Harbor Lantern Hotel"
-    assert stays[0].nights == 2
-    assert stays[0].stay_price_usd == 300
-
-
-def test_search_is_case_insensitive_and_trims_spaces() -> None:
-    assert len(search_stays("  bOsToN  ")) == 4
+    assert [stay["trip_id"] for stay in stays] == ["T001", "T002", "T009", "T010"]
 
 
-def test_unknown_city_returns_no_stays() -> None:
-    assert search_stays("Miami") == []
+@pytest.mark.parametrize(
+    ("query", "expected_trip_ids"),
+    [
+        ("Harbor Lantern Hotel", ["T001", "T009"]),
+        ("  hArBoR  ", ["T001", "T009"]),
+        ("Miami", []),
+    ],
+)
+def test_hotel_name_and_no_match_searches(
+    connection: sqlite3.Connection,
+    query: str,
+    expected_trip_ids: list[str],
+) -> None:
+    stays = search_stays(connection, query)
+
+    assert [stay["trip_id"] for stay in stays] == expected_trip_ids
 
 
-def test_api_returns_search_metadata_and_stays() -> None:
+def test_api_returns_search_metadata_and_stays(client: TestClient) -> None:
     response = client.get("/api/stays", params={"city": "New York"})
 
     assert response.status_code == 200
@@ -34,8 +53,8 @@ def test_api_returns_search_metadata_and_stays() -> None:
     assert [stay["trip_id"] for stay in body["stays"]] == ["T003", "T004", "T011"]
 
 
-def test_api_rejects_blank_city() -> None:
+def test_api_rejects_blank_search_query(client: TestClient) -> None:
     response = client.get("/api/stays", params={"city": "   "})
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Enter a city to search."
+    assert response.json() == {"detail": "Enter a hotel name or city to search."}
