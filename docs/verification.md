@@ -1,3 +1,74 @@
+# Assignment 2.1 Part 1 — live hotel search verification
+
+The complete 16-case expected-versus-observed pass, including the keyboard
+marker defect found, correction applied, and successful rerun, is recorded in
+[part1-verification-2026-09-29.md](part1-verification-2026-09-29.md).
+
+Verified on September 29, 2026. The tests follow the project CHECK → TAKE
+ACTION → VERIFY process. CHECK confirmed that `leaflet@1.9.4`, Vue, Vite,
+FastAPI, HTTPX, pytest, and python-dotenv were already present in their target
+environments. TAKE ACTION added no dependency. VERIFY used the installed
+versions, the automated suite/build, real Geoapify calls, and a browser demo.
+
+## Automated and configuration checks
+
+Run from the repository root:
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests
+npm --prefix frontend run build
+git check-ignore -v backend/.env
+git check-ignore backend/.env.example
+```
+
+Observed results:
+
+- All 68 backend tests passed. Two existing dependency deprecation warnings
+  were reported.
+- Vite 8.2.2 transformed 13 modules and completed the production build.
+- `backend/.env` was present and ignored by Git. The credential-free
+  `backend/.env.example` was not ignored and is available to commit.
+- No package installation was required during implementation.
+
+The test suite covers five ASCII ZIP digits (including leading zeroes),
+rejection before a provider request, exact returned-postcode and U.S. country
+verification, the `accommodation.hotel` category, hard 5,000-metre circle,
+confirmed-center handoff, normalized optional provider fields, duplicate and
+undisplayable records, zero results, malformed responses, sanitized upstream
+errors, and status mappings for invalid, unresolved, configuration, timeout,
+network, HTTP, and provider-response failures.
+
+## Live API and browser demonstration
+
+Start both applications using the README commands. Demonstrate the following
+without changing bookings:
+
+| Action | Observed result | Status |
+| --- | --- | --- |
+| `GET /api/health` | HTTP 200 reported `status: ok` and only the safe phrase `key is configured`; no credential value was returned. | Pass |
+| `GET /api/hotels?zip=02108` | HTTP 200 confirmed postcode `02108`, country `us`, a 5,000-metre radius, and 19 normalized provider hotels. The first observed record was Beacon Hill Hotel and Bistro with provider address, coordinates, distance, and categories. Live counts may change with Geoapify data. | Pass |
+| `GET /api/hotels?zip=0210` | HTTP 400 returned the invalid-ZIP message. | Pass |
+| `GET /api/hotels?zip=00000` | HTTP 404 returned the unresolved-ZIP message and did not substitute another location. | Pass |
+| `GET /api/hotels?zip=99999` | Geoapify resolved the exact U.S. postcode and returned zero hotels; the API returned HTTP 200 with `count: 0` and an empty list. | Pass |
+| Browser search `02108` | The loading state changed to “19 hotels near ZIP 02108.” The list and map each exposed the same 19 named results, the confirmed Boston center, the 5 km circle, and Leaflet/OpenStreetMap attribution. | Pass |
+| Select the second list result | Churchill at Boston View became the selected list item and its matching marker popup opened. | Pass |
+| Select the XV Beacon marker | XV Beacon became selected in the list and its matching popup opened. | Pass |
+| Browser search `2108` | The distinct **Invalid ZIP** state appeared. | Pass |
+| Browser search `00000` | The distinct **ZIP not resolved** state appeared. | Pass |
+| Browser search `99999` | The distinct **No nearby hotels** state appeared while the confirmed center, 5 km circle, map controls, and attribution remained visible. | Pass |
+| Stop only the test-started backend and search again | The distinct **Live search unavailable** request-failure state appeared. The backend was then restarted and `02108` succeeded again. | Pass |
+| Search supplied stays for `Harbor` | Existing functionality remained intact and returned T001 and T009. | Pass |
+| Browser accessibility/console review | ZIP input and submit button were labeled and keyboard controls; list results were keyboard buttons with selected state; Leaflet exposed keyboard markers and zoom controls; attribution links remained visible; no browser warning or error entries were recorded. | Pass |
+
+The live demo intentionally displays no price, rating, room availability, or
+booking information. The names, addresses, distances, coordinates, and
+categories inspected above came from the returned provider data. The early,
+pre-implementation UI artifact remains available at
+[part1-live-hotel-search-mockup.html](part1-live-hotel-search-mockup.html), and
+the research record is [part1-location-research.md](part1-location-research.md).
+
+---
+
 # Part 2 verification
 
 Use CHECK → TAKE ACTION → VERIFY for dependencies. Once setup is complete, run AutoLoop with the commands and browser checks below.

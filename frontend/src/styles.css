@@ -193,6 +193,320 @@ button:disabled {
   font-size: 0.82rem;
 }
 
+.live-search {
+  width: min(1380px, 90vw);
+  margin: 38px auto 0;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #d8dce8;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(24, 34, 74, 0.07);
+}
+
+.live-search .eyebrow {
+  color: #3150d8;
+}
+
+.live-search-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.live-search-heading h2 {
+  margin-bottom: 7px;
+  font-size: 1.8rem;
+  letter-spacing: -0.025em;
+}
+
+.live-search-heading > p {
+  max-width: 600px;
+  margin-bottom: 0;
+  color: #68738d;
+  line-height: 1.55;
+}
+
+.live-search-form {
+  max-width: 760px;
+  margin-top: 24px;
+}
+
+.live-search-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.live-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.live-search-row button {
+  min-height: 48px;
+  padding: 11px 18px;
+}
+
+.live-search-help {
+  margin: 9px 0 0;
+  color: #68738d;
+  font-size: 0.82rem;
+}
+
+.live-search-feedback {
+  margin-top: 12px;
+}
+
+.live-feedback-card {
+  min-height: 82px;
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #53607d;
+  background: #f5f6fa;
+  border: 1px solid #e0e4ed;
+  border-radius: 10px;
+}
+
+.live-feedback-card h3 {
+  margin: 0 0 4px;
+  color: #171f3b;
+  font-size: 1rem;
+}
+
+.live-feedback-card p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.live-feedback-card .spinner {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+.live-feedback-card .state-icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+}
+
+.live-feedback-error {
+  color: #912018;
+  background: #fff0ee;
+  border: 1px solid #efb3ad;
+}
+
+.live-feedback-error .state-icon {
+  background: #b42318;
+}
+
+.live-results-layout {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.live-hotel-list,
+.live-map-panel {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d8dce8;
+  border-radius: 13px;
+}
+
+.live-panel-heading {
+  min-height: 83px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: #f5f6fa;
+  border-bottom: 1px solid #d8dce8;
+}
+
+.live-panel-heading .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.67rem;
+}
+
+.live-panel-heading h3 {
+  margin: 0;
+  color: #171f3b;
+  font-size: 1.18rem;
+}
+
+.live-panel-heading > span {
+  color: #68738d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.live-hotel-results {
+  max-height: 500px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.live-hotel-results li + li {
+  border-top: 1px solid #e2e5ed;
+}
+
+.live-hotel-result {
+  width: 100%;
+  min-height: 104px;
+  padding: 17px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  color: #343d57;
+  text-align: left;
+  background: #fff;
+  border-radius: 0;
+}
+
+.live-hotel-result:hover:not(:disabled) {
+  background: #f3f5ff;
+}
+
+.live-hotel-result.is-selected {
+  background: #eef2ff;
+  box-shadow: inset 4px 0 #3150d8;
+}
+
+.live-result-number {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #151f4a;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.live-hotel-result.is-selected .live-result-number {
+  background: #3150d8;
+}
+
+.live-result-copy,
+.live-result-copy > span {
+  display: block;
+}
+
+.live-result-copy strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #171f3b;
+  line-height: 1.3;
+}
+
+.live-result-copy > span {
+  color: #606c86;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.live-result-copy .live-result-meta {
+  margin-top: 4px;
+  color: #7a859d;
+  font-size: 0.74rem;
+}
+
+.live-selected-label {
+  padding: 4px 7px;
+  color: #2138a4;
+  background: #dce4ff;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.live-empty-list {
+  min-height: 220px;
+  padding: 30px;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  color: #68738d;
+  text-align: center;
+}
+
+.live-empty-list strong {
+  color: #171f3b;
+}
+
+.live-hotel-map {
+  width: 100%;
+  height: 500px;
+  min-height: 380px;
+  background: #e8ebf1;
+}
+
+.live-hotel-map .leaflet-control-attribution {
+  color: #343d57;
+}
+
+.live-hotel-marker-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+.live-hotel-marker {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #151f4a;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(15, 24, 65, 0.4);
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.live-hotel-marker-wrapper.is-selected .live-hotel-marker {
+  background: #3150d8;
+  transform: scale(1.16);
+}
+
+.live-hotel-marker-wrapper:focus-visible .live-hotel-marker {
+  outline: 3px solid #151f4a;
+  outline-offset: 3px;
+}
+
+.live-hotel-popup {
+  min-width: 170px;
+  display: grid;
+  gap: 5px;
+  color: #53607d;
+}
+
+.live-hotel-popup strong {
+  color: #171f3b;
+  font-size: 0.92rem;
+}
+
 .traveler-bar {
   width: min(1380px, 90vw);
   margin: 38px auto 0;
@@ -622,6 +936,24 @@ footer p {
   }
 }
 
+@media (max-width: 1050px) {
+  .live-search-heading {
+    display: block;
+  }
+
+  .live-search-heading > p {
+    margin-top: 12px;
+  }
+
+  .live-results-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .live-hotel-results {
+    max-height: 420px;
+  }
+}
+
 @media (max-width: 760px) {
   .site-header {
     padding: 0 22px;
@@ -636,6 +968,10 @@ footer p {
   }
 
   .search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .live-search-row {
     grid-template-columns: 1fr;
   }
 
@@ -658,6 +994,32 @@ footer p {
   .traveler-bar,
   .history-heading {
     display: block;
+  }
+
+  .live-search {
+    width: min(92vw, 1380px);
+    padding: 20px;
+  }
+
+  .live-feedback-card {
+    align-items: flex-start;
+  }
+
+  .live-panel-heading {
+    align-items: flex-start;
+  }
+
+  .live-hotel-result {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .live-selected-label {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .live-hotel-map {
+    height: 430px;
   }
 
   .traveler-select {

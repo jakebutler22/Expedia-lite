@@ -1,0 +1,748 @@
+<div id="expedia-live-search-mockup" aria-label="Expedia Lite live hotel search early mockup">
+  <style>
+    #expedia-live-search-mockup {
+      color-scheme: light dark;
+      --el-page: light-dark(#f5f7fb, #111827);
+      --el-card: light-dark(#ffffff, #1f2937);
+      --el-ink: light-dark(#172033, #f8fafc);
+      --el-muted: light-dark(#566178, #cbd5e1);
+      --el-line: light-dark(#d8dee9, #475569);
+      --el-navy: light-dark(#172554, #0f172a);
+      --el-navy-text: light-dark(#ffffff, #f8fafc);
+      --el-gold: light-dark(#f7c948, #facc15);
+      --el-accent: light-dark(#1d4ed8, #60a5fa);
+      --el-accent-soft: light-dark(#e8f0ff, #172554);
+      --el-danger: light-dark(#a51d2d, #fda4af);
+      --el-danger-soft: light-dark(#fff1f2, #4c1720);
+      --el-map: light-dark(#eaf0e8, #1d3029);
+      --el-map-line: light-dark(#c5d1c0, #365148);
+      --el-shadow: light-dark(rgba(15, 23, 42, 0.12), rgba(0, 0, 0, 0.32));
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--el-line);
+      border-radius: 18px;
+      background: var(--el-page);
+      color: var(--el-ink);
+      box-shadow: 0 18px 46px var(--el-shadow);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #expedia-live-search-mockup * {
+      box-sizing: border-box;
+    }
+
+    #expedia-live-search-mockup button,
+    #expedia-live-search-mockup input {
+      font: inherit;
+    }
+
+    #expedia-live-search-mockup .el-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--el-navy);
+      color: var(--el-navy-text);
+    }
+
+    #expedia-live-search-mockup .el-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--el-gold);
+      color: #172033;
+    }
+
+    #expedia-live-search-mockup .el-step {
+      color: light-dark(#dbeafe, #cbd5e1);
+      font-size: 13px;
+    }
+
+    #expedia-live-search-mockup .el-hero {
+      padding: 28px 24px 32px;
+      background: var(--el-navy);
+      color: var(--el-navy-text);
+    }
+
+    #expedia-live-search-mockup .el-hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 4vw, 38px);
+      font-weight: 500;
+      line-height: 1.15;
+    }
+
+    #expedia-live-search-mockup .el-hero p {
+      margin: 0 0 20px;
+      color: light-dark(#dbeafe, #cbd5e1);
+    }
+
+    #expedia-live-search-mockup .el-search {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      max-width: 680px;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--el-card);
+      color: var(--el-ink);
+    }
+
+    #expedia-live-search-mockup .el-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    #expedia-live-search-mockup label {
+      color: var(--el-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--el-line);
+      border-radius: 9px;
+      background: var(--el-card);
+      color: var(--el-ink);
+      padding: 10px 12px;
+    }
+
+    #expedia-live-search-mockup .el-submit {
+      align-self: end;
+      min-height: 44px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--el-gold);
+      color: #172033;
+      padding: 10px 18px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-review {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      overflow: auto;
+      border-bottom: 1px solid var(--el-line);
+      background: var(--el-card);
+    }
+
+    #expedia-live-search-mockup .el-review-label {
+      flex: 0 0 auto;
+      margin-right: 4px;
+      color: var(--el-muted);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    #expedia-live-search-mockup .el-state-button {
+      flex: 0 0 auto;
+      min-height: 36px;
+      border: 1px solid var(--el-line);
+      border-radius: 999px;
+      background: var(--el-card);
+      color: var(--el-ink);
+      padding: 7px 11px;
+    }
+
+    #expedia-live-search-mockup .el-state-button[aria-pressed="true"] {
+      border-color: var(--el-accent);
+      background: var(--el-accent-soft);
+      color: var(--el-accent);
+    }
+
+    #expedia-live-search-mockup .el-content {
+      padding: var(--el-content-pad, 24px);
+    }
+
+    #expedia-live-search-mockup .el-status {
+      margin: 0 0 16px;
+      color: var(--el-muted);
+    }
+
+    #expedia-live-search-mockup .el-results {
+      display: grid;
+      grid-template-columns: var(--el-list-width, minmax(270px, 0.8fr)) minmax(0, 1.2fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    #expedia-live-search-mockup .el-panel {
+      border: 1px solid var(--el-line);
+      border-radius: 14px;
+      background: var(--el-card);
+      overflow: hidden;
+    }
+
+    #expedia-live-search-mockup .el-panel-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--el-line);
+    }
+
+    #expedia-live-search-mockup .el-panel-head h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-panel-head p,
+    #expedia-live-search-mockup .el-meta {
+      margin: 0;
+      color: var(--el-muted);
+      font-size: 13px;
+    }
+
+    #expedia-live-search-mockup .el-radius {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--el-accent-soft);
+      color: var(--el-accent);
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-list {
+      display: grid;
+      gap: 0;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    #expedia-live-search-mockup .el-hotel {
+      width: 100%;
+      min-height: 92px;
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 12px;
+      border: 0;
+      border-bottom: 1px solid var(--el-line);
+      background: var(--el-card);
+      color: var(--el-ink);
+      padding: var(--el-row-pad, 16px 18px);
+      text-align: left;
+    }
+
+    #expedia-live-search-mockup .el-hotel:last-child {
+      border-bottom: 0;
+    }
+
+    #expedia-live-search-mockup .el-hotel[aria-pressed="true"] {
+      box-shadow: inset 4px 0 0 var(--el-accent);
+      background: var(--el-accent-soft);
+    }
+
+    #expedia-live-search-mockup .el-number,
+    #expedia-live-search-mockup .el-marker {
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--el-navy);
+      color: var(--el-navy-text);
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-number {
+      width: 28px;
+      height: 28px;
+    }
+
+    #expedia-live-search-mockup .el-hotel[aria-pressed="true"] .el-number,
+    #expedia-live-search-mockup .el-marker[aria-pressed="true"] {
+      background: var(--el-accent);
+      color: light-dark(#ffffff, #07111f);
+    }
+
+    #expedia-live-search-mockup .el-hotel-name {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-map {
+      position: relative;
+      min-height: 410px;
+      overflow: hidden;
+      background-color: var(--el-map);
+      background-image:
+        linear-gradient(var(--el-map-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--el-map-line) 1px, transparent 1px);
+      background-size: 52px 52px;
+    }
+
+    #expedia-live-search-mockup .el-map-note {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      z-index: 2;
+      transform: translateX(-50%);
+      border: 1px solid var(--el-line);
+      border-radius: 999px;
+      background: var(--el-card);
+      color: var(--el-muted);
+      padding: 7px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #expedia-live-search-mockup .el-radius-ring {
+      position: absolute;
+      inset: 17% 18% 18%;
+      border: 2px dashed var(--el-accent);
+      border-radius: 50%;
+      opacity: 0.45;
+    }
+
+    #expedia-live-search-mockup .el-center {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      border: 4px solid var(--el-card);
+      border-radius: 50%;
+      background: var(--el-gold);
+      box-shadow: 0 0 0 2px var(--el-navy);
+    }
+
+    #expedia-live-search-mockup .el-marker {
+      position: absolute;
+      z-index: 3;
+      width: 38px;
+      height: 38px;
+      border: 3px solid var(--el-card);
+      box-shadow: 0 6px 16px var(--el-shadow);
+    }
+
+    #expedia-live-search-mockup .el-marker[data-place-id="api-1"] { left: 31%; top: 31%; }
+    #expedia-live-search-mockup .el-marker[data-place-id="api-2"] { left: 62%; top: 42%; }
+    #expedia-live-search-mockup .el-marker[data-place-id="api-3"] { left: 45%; top: 68%; }
+
+    #expedia-live-search-mockup .el-popup {
+      position: absolute;
+      left: 50%;
+      bottom: 46px;
+      z-index: 2;
+      max-width: calc(100% - 32px);
+      transform: translateX(-50%);
+      border: 1px solid var(--el-line);
+      border-radius: 10px;
+      background: var(--el-card);
+      color: var(--el-ink);
+      padding: 10px 12px;
+      box-shadow: 0 8px 22px var(--el-shadow);
+      text-align: center;
+    }
+
+    #expedia-live-search-mockup .el-attribution {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      background: var(--el-card);
+      color: var(--el-muted);
+      padding: 4px 7px;
+      font-size: 11px;
+    }
+
+    #expedia-live-search-mockup .el-zoom {
+      position: absolute;
+      top: 54px;
+      left: 12px;
+      z-index: 4;
+      display: grid;
+    }
+
+    #expedia-live-search-mockup .el-zoom button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--el-line);
+      background: var(--el-card);
+      color: var(--el-ink);
+      font-size: 20px;
+    }
+
+    #expedia-live-search-mockup .el-zoom button:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    #expedia-live-search-mockup .el-zoom button:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    #expedia-live-search-mockup .el-message {
+      display: grid;
+      max-width: 660px;
+      gap: 10px;
+      border: 1px solid var(--el-line);
+      border-radius: 14px;
+      background: var(--el-card);
+      padding: 24px;
+    }
+
+    #expedia-live-search-mockup .el-message[data-kind="error"] {
+      border-color: var(--el-danger);
+      background: var(--el-danger-soft);
+    }
+
+    #expedia-live-search-mockup .el-message h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    #expedia-live-search-mockup .el-message p {
+      margin: 0;
+      color: var(--el-muted);
+    }
+
+    #expedia-live-search-mockup .el-loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      vertical-align: -3px;
+      border: 2px solid var(--el-line);
+      border-top-color: var(--el-accent);
+      border-radius: 50%;
+      animation: el-spin 0.9s linear infinite;
+    }
+
+    #expedia-live-search-mockup .el-footer {
+      padding: 12px 24px 18px;
+      color: var(--el-muted);
+      font-size: 12px;
+    }
+
+    #expedia-live-search-mockup [hidden] {
+      display: none !important;
+    }
+
+    #expedia-live-search-mockup[data-layout="map"] .el-results {
+      --el-list-width: minmax(240px, 0.55fr);
+    }
+
+    #expedia-live-search-mockup[data-layout="list"] .el-results {
+      --el-list-width: minmax(330px, 1.2fr);
+    }
+
+    #expedia-live-search-mockup[data-density="compact"] {
+      --el-content-pad: 16px;
+      --el-row-pad: 11px 14px;
+    }
+
+    @keyframes el-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #expedia-live-search-mockup .el-loading { animation: none; }
+    }
+
+    @media (max-width: 740px) {
+      #expedia-live-search-mockup .el-topbar,
+      #expedia-live-search-mockup .el-review,
+      #expedia-live-search-mockup .el-content,
+      #expedia-live-search-mockup .el-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      #expedia-live-search-mockup .el-hero {
+        padding: 24px 16px 28px;
+      }
+
+      #expedia-live-search-mockup .el-search,
+      #expedia-live-search-mockup .el-results {
+        grid-template-columns: 1fr;
+      }
+
+      #expedia-live-search-mockup .el-map {
+        min-height: 340px;
+      }
+
+      #expedia-live-search-mockup .el-step {
+        display: none;
+      }
+    }
+  </style>
+
+  <header class="el-topbar">
+    <div class="el-brand"><span class="el-mark" aria-hidden="true">E</span> Expedia Lite</div>
+    <div class="el-step">Pre-implementation mockup · Assignment 2.1 Part 1</div>
+  </header>
+
+  <section class="el-hero">
+    <h1>Find hotels near a U.S. ZIP</h1>
+    <p>Search live Geoapify hotel data within 5 km of the confirmed ZIP location.</p>
+    <form class="el-search" id="el-search-form">
+      <div class="el-field">
+        <label for="el-zip">U.S. ZIP code</label>
+        <input id="el-zip" name="zip" value="02108" inputmode="numeric" maxlength="5" autocomplete="postal-code" aria-describedby="el-status">
+      </div>
+      <button class="el-submit" type="submit">Search hotels</button>
+    </form>
+  </section>
+
+  <nav class="el-review" aria-label="Preview a required interface state">
+    <span class="el-review-label">Mockup state</span>
+    <button class="el-state-button" type="button" data-mode="ready" aria-pressed="false">Ready</button>
+    <button class="el-state-button" type="button" data-mode="loading" aria-pressed="false">Loading</button>
+    <button class="el-state-button" type="button" data-mode="results" aria-pressed="true">Results</button>
+    <button class="el-state-button" type="button" data-mode="invalid" aria-pressed="false">Invalid ZIP</button>
+    <button class="el-state-button" type="button" data-mode="unresolved" aria-pressed="false">Unresolved ZIP</button>
+    <button class="el-state-button" type="button" data-mode="empty" aria-pressed="false">No hotels</button>
+    <button class="el-state-button" type="button" data-mode="failed" aria-pressed="false">Request failed</button>
+  </nav>
+
+  <main class="el-content">
+    <p class="el-status" id="el-status" aria-live="polite">Results-state preview for ZIP 02108. Select a list row or matching map marker.</p>
+
+    <div class="el-message" id="el-message" hidden>
+      <h2 id="el-message-title"></h2>
+      <p id="el-message-copy"></p>
+    </div>
+
+    <section class="el-results" id="el-results" aria-label="Hotel results and map">
+      <section class="el-panel" aria-labelledby="el-list-heading">
+        <div class="el-panel-head">
+          <div>
+            <h2 id="el-list-heading">Hotels within 5 km</h2>
+            <p id="el-result-context">Names and details come from the API response</p>
+          </div>
+          <span class="el-radius">5 km</span>
+        </div>
+        <ol class="el-list" id="el-list"></ol>
+      </section>
+
+      <section class="el-panel" aria-labelledby="el-map-heading">
+        <div class="el-panel-head">
+          <div>
+            <h2 id="el-map-heading">Map</h2>
+            <p>Centered on the Geoapify-resolved ZIP coordinates</p>
+          </div>
+        </div>
+        <div class="el-map" id="el-map" role="region" aria-label="Leaflet map preview with keyboard-selectable hotel markers">
+          <span class="el-map-note">Schematic map area · live OpenStreetMap tiles in implementation</span>
+          <span class="el-radius-ring" aria-hidden="true"></span>
+          <span class="el-center" aria-label="Resolved ZIP search center"></span>
+          <div class="el-zoom" aria-label="Map zoom controls">
+            <button type="button" aria-label="Zoom in">+</button>
+            <button type="button" aria-label="Zoom out">−</button>
+          </div>
+          <div id="el-markers"></div>
+          <div class="el-popup" id="el-selected" aria-live="polite"></div>
+          <div class="el-attribution">Leaflet | © OpenStreetMap contributors</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="el-footer">Only fields returned by the API are displayed—no invented prices, ratings, availability, or booking details.</footer>
+
+  <script>
+    (() => {
+      const root = document.getElementById("expedia-live-search-mockup");
+      const form = root.querySelector("#el-search-form");
+      const zipInput = root.querySelector("#el-zip");
+      const submitButton = root.querySelector(".el-submit");
+      const status = root.querySelector("#el-status");
+      const message = root.querySelector("#el-message");
+      const messageTitle = root.querySelector("#el-message-title");
+      const messageCopy = root.querySelector("#el-message-copy");
+      const resultsPanel = root.querySelector("#el-results");
+      const resultContext = root.querySelector("#el-result-context");
+      const list = root.querySelector("#el-list");
+      const markers = root.querySelector("#el-markers");
+      const selected = root.querySelector("#el-selected");
+      const stateButtons = [...root.querySelectorAll("[data-mode]")];
+
+      const hotelPlaceholders = [
+        { id: "api-1", number: "1", name: "Hotel name from API", address: "Formatted address from API", coordinate: "Coordinates from API", distance: "Distance from API, if present" },
+        { id: "api-2", number: "2", name: "Hotel name from API", address: "Formatted address from API", coordinate: "Coordinates from API", distance: "Distance from API, if present" },
+        { id: "api-3", number: "3", name: "Hotel name from API", address: "Formatted address from API", coordinate: "Coordinates from API", distance: "Distance from API, if present" }
+      ];
+
+      const ui = { mode: "results", selectedId: "api-1" };
+      const design = { layout: "balanced", density: "comfortable", showCoordinates: true };
+
+      const messages = {
+        ready: ["Ready to search", "Enter an exact five-digit U.S. ZIP code, including a leading zero when applicable."],
+        loading: ["Searching Geoapify…", "Confirming the requested ZIP, then searching for hotels within 5 km."],
+        invalid: ["Enter a five-digit U.S. ZIP code", "Use exactly five digits. The ZIP stays text so a leading zero is preserved."],
+        unresolved: ["ZIP 00000 could not be resolved", "No substitute location is shown. Check the requested ZIP and try again."],
+        failed: ["Hotel search could not be completed", "The request failed. Nothing has been inferred or replaced; try again."],
+        empty: ["No hotels returned within 5 km", "The ZIP was resolved, but Geoapify returned zero hotel results inside the search radius."]
+      };
+
+      function persistState() {
+        if (window.openai?.setWidgetState) {
+          window.openai.setWidgetState({
+            modelContent: { previewState: ui.mode, selectedResult: ui.selectedId },
+            privateContent: { design }
+          }).catch(() => {});
+        }
+      }
+
+      function selectHotel(placeId, save = true) {
+        ui.selectedId = placeId;
+        root.querySelectorAll("[data-place-id]").forEach((control) => {
+          control.setAttribute("aria-pressed", String(control.dataset.placeId === placeId));
+        });
+        const hotel = hotelPlaceholders.find((item) => item.id === placeId);
+        selected.innerHTML = hotel
+          ? `<strong>Selected result ${hotel.number}</strong><br><span class="el-meta">${hotel.name} · same <code>place_id</code> in list and map</span>`
+          : "Select a hotel result";
+        if (save) persistState();
+      }
+
+      function renderHotelResults() {
+        list.innerHTML = hotelPlaceholders.map((hotel) => `
+          <li>
+            <button class="el-hotel" type="button" data-place-id="${hotel.id}" aria-pressed="false" aria-label="Select API hotel result ${hotel.number}">
+              <span class="el-number" aria-hidden="true">${hotel.number}</span>
+              <span>
+                <span class="el-hotel-name">${hotel.name}</span>
+                <span class="el-meta">${hotel.address}<br>${hotel.distance}<span class="el-coordinate"><br>${hotel.coordinate}</span></span>
+              </span>
+            </button>
+          </li>`).join("");
+        markers.innerHTML = hotelPlaceholders.map((hotel) => `
+          <button class="el-marker" type="button" data-place-id="${hotel.id}" aria-pressed="false" aria-label="Select API hotel result ${hotel.number}">${hotel.number}</button>`).join("");
+        root.querySelectorAll("[data-place-id]").forEach((control) => {
+          control.addEventListener("click", () => selectHotel(control.dataset.placeId));
+        });
+        selectHotel(ui.selectedId, false);
+      }
+
+      function renderMode(save = true) {
+        stateButtons.forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.mode === ui.mode));
+        });
+
+        const showsMap = ui.mode === "results" || ui.mode === "empty";
+        resultsPanel.hidden = !showsMap;
+        message.hidden = showsMap;
+        message.dataset.kind = ["invalid", "unresolved", "failed"].includes(ui.mode) ? "error" : "info";
+
+        if (ui.mode === "results") {
+          status.textContent = `Results-state preview for ZIP ${zipInput.value || "02108"}. Select a list row or matching map marker.`;
+          resultContext.textContent = "Names and details come from the API response";
+          list.hidden = false;
+          markers.hidden = false;
+          selected.hidden = false;
+          renderHotelResults();
+        } else if (ui.mode === "empty") {
+          status.textContent = "Zero-results-state preview. The requested ZIP is confirmed; the hotel collection is empty.";
+          resultContext.textContent = "The API returned zero hotels for this radius";
+          list.hidden = false;
+          list.innerHTML = '<li class="el-message"><strong>No nearby hotel results</strong><span class="el-meta">Try another valid ZIP.</span></li>';
+          markers.hidden = true;
+          selected.hidden = true;
+        } else {
+          const [title, copy] = messages[ui.mode];
+          messageTitle.innerHTML = ui.mode === "loading" ? `<span class="el-loading" aria-hidden="true"></span>${title}` : title;
+          messageCopy.textContent = copy;
+          status.textContent = `${title}. ${copy}`;
+        }
+        if (save) persistState();
+      }
+
+      function applyDesign() {
+        root.dataset.layout = design.layout;
+        root.dataset.density = design.density;
+        root.querySelectorAll(".el-coordinate").forEach((item) => {
+          item.hidden = !design.showCoordinates;
+        });
+      }
+
+      stateButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          ui.mode = button.dataset.mode;
+          renderMode();
+          applyDesign();
+        });
+      });
+
+      function runSearchPreview() {
+        ui.mode = /^[0-9]{5}$/.test(zipInput.value) ? "results" : "invalid";
+        renderMode();
+        applyDesign();
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        runSearchPreview();
+      });
+
+      submitButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        runSearchPreview();
+      });
+
+      zipInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          runSearchPreview();
+        }
+      });
+
+      window.addEventListener("openai:set_globals", (event) => {
+        const saved = event.detail?.globals?.widgetState;
+        if (saved?.modelContent?.previewState) ui.mode = saved.modelContent.previewState;
+        if (saved?.modelContent?.selectedResult) ui.selectedId = saved.modelContent.selectedResult;
+        Object.assign(design, saved?.privateContent?.design || {});
+        renderMode(false);
+        applyDesign();
+      });
+
+      renderMode(false);
+      applyDesign();
+
+      if (globalThis.Tweak) {
+        const tweak = new Tweak({ container: root, onChange: applyDesign });
+        tweak.addSelect(design, "layout", {
+          label: "Results emphasis",
+          reference: "results.layout",
+          options: [
+            { label: "Balanced", value: "balanced" },
+            { label: "Map emphasis", value: "map" },
+            { label: "List emphasis", value: "list" }
+          ]
+        });
+        tweak.addSelect(design, "density", {
+          label: "Content density",
+          reference: "results.density",
+          options: [
+            { label: "Comfortable", value: "comfortable" },
+            { label: "Compact", value: "compact" }
+          ]
+        });
+        tweak.addToggle(design, "showCoordinates", {
+          label: "Show API coordinates",
+          reference: "results.coordinates"
+        });
+      }
+    })();
+  </script>
+</div>

@@ -25,6 +25,37 @@ class SearchResponse(BaseModel):
     stays: list[Stay]
 
 
+class ZipLocationResponse(BaseModel):
+    postcode: str
+    country_code: str
+    latitude: float
+    longitude: float
+    locality: str | None = None
+
+
+class Hotel(BaseModel):
+    place_id: str
+    name: str
+    latitude: float
+    longitude: float
+    formatted_address: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    postcode: str | None = None
+    country: str | None = None
+    distance_meters: float | None = None
+    categories: list[str] | None = None
+
+
+class HotelSearchResponse(BaseModel):
+    search_center: ZipLocationResponse
+    radius_meters: int
+    count: int
+    hotels: list[Hotel]
+
+
 class User(BaseModel):
     user_id: str
     display_name: str

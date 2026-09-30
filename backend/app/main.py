@@ -19,6 +19,7 @@ from .bookings import (
     list_traveler_bookings,
     list_users,
 )
+from .config import geoapify_api_key_status
 from .database import (
     DATA_DIRECTORY,
     DEFAULT_DATABASE_PATH,
@@ -26,13 +27,26 @@ from .database import (
     initialize_database,
 )
 from .domain import normalize_search_term
+from .geocoding import (
+    GeoapifyHTTPError,
+    GeoapifyNetworkError,
+    GeoapifyNotConfiguredError,
+    GeoapifyResponseError,
+    GeoapifyTimeoutError,
+    InvalidPostcodeError,
+    lookup_us_postcode,
+)
+from .hotel_search import search_hotels_by_postcode
 from .models import (
     Booking,
     BookingCreate,
     BookingDeleteResponse,
     BookingHistoryResponse,
+    Hotel,
+    HotelSearchResponse,
     SearchResponse,
     User,
+    ZipLocationResponse,
 )
 from .search import InvalidSearchQueryError, search_stays
 
@@ -56,6 +70,86 @@ def _raise_booking_http_error(error: Exception) -> NoReturn:
     ):
         raise HTTPException(status_code=404, detail=str(error)) from error
     raise error
+
+
+def _lookup_zip_location(postcode: str) -> ZipLocationResponse:
+    try:
+        result = lookup_us_postcode(postcode)
+    except InvalidPostcodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter a five-digit U.S. ZIP code.",
+        ) from None
+    except GeoapifyNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geoapify service is not configured.",
+        ) from None
+    except GeoapifyTimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Geoapify ZIP lookup timed out.",
+        ) from None
+    except (
+        GeoapifyNetworkError,
+        GeoapifyHTTPError,
+        GeoapifyResponseError,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Geoapify ZIP lookup failed.",
+        ) from None
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ZIP code {postcode.strip()} could not be resolved.",
+        )
+
+    return ZipLocationResponse(**result)
+
+
+def _search_live_hotels(postcode: str) -> HotelSearchResponse:
+    try:
+        result = search_hotels_by_postcode(postcode)
+    except InvalidPostcodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter a five-digit U.S. ZIP code.",
+        ) from None
+    except GeoapifyNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geoapify service is not configured.",
+        ) from None
+    except GeoapifyTimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Geoapify hotel search timed out.",
+        ) from None
+    except (
+        GeoapifyNetworkError,
+        GeoapifyHTTPError,
+        GeoapifyResponseError,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Geoapify hotel search failed.",
+        ) from None
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ZIP code {postcode.strip()} could not be resolved.",
+        )
+
+    hotels = [Hotel(**hotel) for hotel in result["hotels"]]
+    return HotelSearchResponse(
+        search_center=ZipLocationResponse(**result["search_center"]),
+        radius_meters=result["radius_meters"],
+        count=len(hotels),
+        hotels=hotels,
+    )
 
 
 def create_app(
@@ -85,7 +179,44 @@ def create_app(
 
     @application.get("/api/health")
     def health() -> dict[str, str]:
-        return {"status": "ok"}
+        return {
+            "status": "ok",
+            "geoapify_api_key_status": geoapify_api_key_status(),
+        }
+
+    @application.get(
+        "/api/demo/zip-location",
+        response_model=ZipLocationResponse,
+        response_model_exclude_none=True,
+    )
+    def get_demo_zip_location() -> ZipLocationResponse:
+        return _lookup_zip_location("16802")
+
+    @application.get(
+        "/api/zip-location",
+        response_model=ZipLocationResponse,
+        response_model_exclude_none=True,
+    )
+    def get_zip_location(
+        zip: str = Query(
+            ...,
+            description="Five-digit U.S. ZIP code",
+        ),
+    ) -> ZipLocationResponse:
+        return _lookup_zip_location(zip)
+
+    @application.get(
+        "/api/hotels",
+        response_model=HotelSearchResponse,
+        response_model_exclude_none=True,
+    )
+    def get_live_hotels(
+        zip: str = Query(
+            ...,
+            description="Exact five-digit U.S. ZIP code used as the hotel search center",
+        ),
+    ) -> HotelSearchResponse:
+        return _search_live_hotels(zip)
 
     @application.get("/api/stays", response_model=SearchResponse)
     def get_stays(

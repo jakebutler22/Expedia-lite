@@ -1,5 +1,7 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import L from 'leaflet'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import 'leaflet/dist/leaflet.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
@@ -22,9 +24,24 @@ const bookingFeedback = ref('')
 const bookingFeedbackType = ref('success')
 const deleteCandidateId = ref('')
 
+const zipCode = ref('')
+const requestedZip = ref('')
+const hotelSearch = ref(null)
+const hotelSearchState = ref('ready')
+const hotelSearchError = ref('')
+const selectedHotelId = ref('')
+const hotelMapElement = ref(null)
+
+const hotelListButtons = new Map()
+const hotelMarkers = new Map()
+let hotelMap = null
+
 const selectedTraveler = computed(() =>
   travelers.value.find((traveler) => traveler.user_id === selectedUserId.value),
 )
+
+const liveHotels = computed(() => hotelSearch.value?.hotels || [])
+const liveSearchLoading = computed(() => hotelSearchState.value === 'loading')
 
 const resultSummary = computed(() => {
   if (!searchedQuery.value || loading.value || error.value || message.value) {
@@ -57,6 +74,184 @@ async function getErrorMessage(response, fallback) {
   } catch {
     return fallback
   }
+}
+
+function displayHotelLocation(hotel) {
+  if (hotel.formatted_address) {
+    return hotel.formatted_address
+  }
+
+  const addressLines = [hotel.address_line1, hotel.address_line2].filter(Boolean)
+  if (addressLines.length) {
+    return addressLines.join(', ')
+  }
+
+  const locality = [hotel.city, hotel.state, hotel.postcode, hotel.country].filter(Boolean)
+  if (locality.length) {
+    return locality.join(', ')
+  }
+
+  return `${hotel.latitude.toFixed(5)}, ${hotel.longitude.toFixed(5)}`
+}
+
+function formatHotelDistance(distanceMeters) {
+  if (typeof distanceMeters !== 'number') {
+    return ''
+  }
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m from search center`
+  }
+  return `${(distanceMeters / 1000).toFixed(1)} km from search center`
+}
+
+function displaySearchCenter(center) {
+  if (center.locality) {
+    return center.locality
+  }
+  return `${center.latitude.toFixed(5)}, ${center.longitude.toFixed(5)}`
+}
+
+function setHotelListButton(placeId, element) {
+  if (element) {
+    hotelListButtons.set(placeId, element)
+  } else {
+    hotelListButtons.delete(placeId)
+  }
+}
+
+function destroyHotelMap() {
+  if (hotelMap) {
+    hotelMap.remove()
+    hotelMap = null
+  }
+  hotelMarkers.clear()
+}
+
+function updateMarkerSelection() {
+  hotelMarkers.forEach(({ marker }, placeId) => {
+    const isSelected = placeId === selectedHotelId.value
+    marker.getElement()?.classList.toggle('is-selected', isSelected)
+    marker.getElement()?.setAttribute('aria-pressed', String(isSelected))
+    marker.setZIndexOffset(isSelected ? 1000 : 0)
+  })
+}
+
+function createHotelPopup(hotel) {
+  const popup = document.createElement('div')
+  popup.className = 'live-hotel-popup'
+
+  const name = document.createElement('strong')
+  name.textContent = hotel.name
+  popup.append(name)
+
+  const location = document.createElement('span')
+  location.textContent = displayHotelLocation(hotel)
+  popup.append(location)
+
+  return popup
+}
+
+function selectLiveHotel(placeId, source) {
+  const hotel = liveHotels.value.find((candidate) => candidate.place_id === placeId)
+  if (!hotel) {
+    return
+  }
+
+  selectedHotelId.value = placeId
+  updateMarkerSelection()
+
+  const markerRecord = hotelMarkers.get(placeId)
+  if (markerRecord) {
+    markerRecord.marker.openPopup()
+    if (source === 'list') {
+      hotelMap?.panTo(markerRecord.marker.getLatLng())
+    }
+  }
+
+  if (source === 'marker') {
+    hotelListButtons.get(placeId)?.scrollIntoView({ block: 'nearest' })
+  }
+}
+
+function renderHotelMap() {
+  if (!hotelMapElement.value || !hotelSearch.value) {
+    return
+  }
+
+  destroyHotelMap()
+  const center = L.latLng(
+    hotelSearch.value.search_center.latitude,
+    hotelSearch.value.search_center.longitude,
+  )
+  hotelMap = L.map(hotelMapElement.value, {
+    attributionControl: true,
+    keyboard: true,
+    zoomControl: true,
+  })
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(hotelMap)
+
+  L.circle(center, {
+    radius: hotelSearch.value.radius_meters,
+    color: '#3150d8',
+    fillColor: '#6f86eb',
+    fillOpacity: 0.08,
+    interactive: false,
+    weight: 2,
+  }).addTo(hotelMap)
+
+  L.circleMarker(center, {
+    radius: 6,
+    color: '#151f4a',
+    fillColor: '#ffd500',
+    fillOpacity: 1,
+    interactive: false,
+    weight: 3,
+  })
+    .bindTooltip(`Search center for ZIP ${hotelSearch.value.search_center.postcode}`)
+    .addTo(hotelMap)
+
+  const bounds = L.latLngBounds([center])
+  liveHotels.value.forEach((hotel, index) => {
+    const marker = L.marker([hotel.latitude, hotel.longitude], {
+      alt: `${hotel.name} map marker`,
+      icon: L.divIcon({
+        className: 'live-hotel-marker-wrapper',
+        html: `<span class="live-hotel-marker" aria-hidden="true">${index + 1}</span>`,
+        iconAnchor: [19, 19],
+        iconSize: [38, 38],
+        popupAnchor: [0, -21],
+      }),
+      keyboard: true,
+      riseOnHover: true,
+      title: hotel.name,
+    })
+      .bindPopup(createHotelPopup(hotel))
+      .on('click', () => selectLiveHotel(hotel.place_id, 'marker'))
+      .on('keypress', (event) => {
+        if (event.originalEvent?.key === 'Enter' || event.originalEvent?.keyCode === 13) {
+          selectLiveHotel(hotel.place_id, 'marker')
+        }
+      })
+      .addTo(hotelMap)
+
+    hotelMarkers.set(hotel.place_id, { marker })
+    bounds.extend([hotel.latitude, hotel.longitude])
+  })
+
+  if (liveHotels.value.length) {
+    hotelMap.fitBounds(bounds, { maxZoom: 15, padding: [42, 42] })
+  } else {
+    hotelMap.setView(center, 13)
+  }
+
+  updateMarkerSelection()
+  const selectedMarker = hotelMarkers.get(selectedHotelId.value)?.marker
+  selectedMarker?.openPopup()
+  window.requestAnimationFrame(() => hotelMap?.invalidateSize())
 }
 
 function setBookingFeedback(text, type = 'success') {
@@ -96,6 +291,52 @@ async function search() {
       'We could not complete the search. Confirm the backend is running and try again.'
   } finally {
     loading.value = false
+  }
+}
+
+async function searchLiveHotels() {
+  const postcode = zipCode.value.trim()
+  destroyHotelMap()
+  hotelListButtons.clear()
+  hotelSearch.value = null
+  selectedHotelId.value = ''
+  hotelSearchError.value = ''
+
+  if (!/^[0-9]{5}$/.test(postcode)) {
+    hotelSearchState.value = 'invalid'
+    hotelSearchError.value = 'Enter exactly five numeric digits, including a leading zero when needed.'
+    return
+  }
+
+  requestedZip.value = postcode
+  hotelSearchState.value = 'loading'
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/hotels?zip=${encodeURIComponent(postcode)}`,
+    )
+    if (!response.ok) {
+      const detail = await getErrorMessage(response, 'The live hotel search returned an error.')
+      if (response.status === 400) {
+        hotelSearchState.value = 'invalid'
+      } else if (response.status === 404) {
+        hotelSearchState.value = 'unresolved'
+      } else {
+        hotelSearchState.value = 'failed'
+      }
+      hotelSearchError.value = detail
+      return
+    }
+
+    hotelSearch.value = await response.json()
+    selectedHotelId.value = hotelSearch.value.hotels[0]?.place_id || ''
+    hotelSearchState.value = hotelSearch.value.count === 0 ? 'empty' : 'results'
+    await nextTick()
+    renderHotelMap()
+  } catch {
+    hotelSearchState.value = 'failed'
+    hotelSearchError.value =
+      'We could not complete the live hotel search. Confirm the backend is running and try again.'
   }
 }
 
@@ -256,6 +497,7 @@ async function deleteHistoryBooking(booking) {
 }
 
 onMounted(loadTravelers)
+onBeforeUnmount(destroyHotelMap)
 </script>
 
 <template>
@@ -296,6 +538,196 @@ onMounted(loadTravelers)
           </div>
           <p class="city-hints">Hotel names can be partial, such as Harbor.</p>
         </form>
+      </section>
+
+      <section class="live-search" aria-labelledby="live-search-title">
+        <div class="live-search-heading">
+          <div>
+            <p class="eyebrow">Live Geoapify search</p>
+            <h2 id="live-search-title">Hotels within 5 km of a U.S. ZIP</h2>
+          </div>
+          <p>
+            The backend confirms the requested postcode and returns nearby provider results without
+            exposing the Geoapify credential.
+          </p>
+        </div>
+
+        <form class="live-search-form" novalidate @submit.prevent="searchLiveHotels">
+          <label for="zip-code">Five-digit U.S. ZIP code</label>
+          <div class="live-search-row">
+            <div class="input-wrap">
+              <span aria-hidden="true">⌖</span>
+              <input
+                id="zip-code"
+                v-model="zipCode"
+                name="zip"
+                type="text"
+                inputmode="numeric"
+                autocomplete="postal-code"
+                pattern="[0-9]{5}"
+                maxlength="5"
+                placeholder="02108"
+                :disabled="liveSearchLoading"
+              />
+            </div>
+            <button type="submit" :disabled="liveSearchLoading">
+              {{ liveSearchLoading ? 'Searching…' : 'Search live hotels' }}
+            </button>
+          </div>
+          <p class="live-search-help">Leading zeros are preserved, such as 02108 for Boston.</p>
+        </form>
+
+        <div class="live-search-feedback" aria-live="polite">
+          <div v-if="hotelSearchState === 'ready'" class="live-feedback-card">
+            <span class="state-icon" aria-hidden="true">⌖</span>
+            <div>
+              <h3>Ready to search</h3>
+              <p>Enter a ZIP to find hotels from the live Geoapify Places response.</p>
+            </div>
+          </div>
+
+          <div v-else-if="hotelSearchState === 'loading'" class="live-feedback-card" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <div>
+              <h3>Searching ZIP {{ requestedZip }}…</h3>
+              <p>Confirming the postcode, then checking a 5 km radius.</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="hotelSearchState === 'invalid'"
+            class="live-feedback-card live-feedback-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div>
+              <h3>Invalid ZIP</h3>
+              <p>{{ hotelSearchError }}</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="hotelSearchState === 'unresolved'"
+            class="live-feedback-card live-feedback-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">?</span>
+            <div>
+              <h3>ZIP not resolved</h3>
+              <p>{{ hotelSearchError }}</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="hotelSearchState === 'failed'"
+            class="live-feedback-card live-feedback-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div>
+              <h3>Live search unavailable</h3>
+              <p>{{ hotelSearchError }}</p>
+            </div>
+          </div>
+
+          <div v-else-if="hotelSearchState === 'empty'" class="live-feedback-card" role="status">
+            <span class="state-icon" aria-hidden="true">⌕</span>
+            <div>
+              <h3>No nearby hotels</h3>
+              <p>
+                Geoapify resolved ZIP {{ hotelSearch.search_center.postcode }}, but returned no
+                hotels within 5 km.
+              </p>
+            </div>
+          </div>
+
+          <div v-else-if="hotelSearchState === 'results'" class="live-feedback-card" role="status">
+            <span class="state-icon" aria-hidden="true">✓</span>
+            <div>
+              <h3>
+                {{ hotelSearch.count }}
+                {{ hotelSearch.count === 1 ? 'hotel' : 'hotels' }} near ZIP
+                {{ hotelSearch.search_center.postcode }}
+              </h3>
+              <p>
+                Search centered on
+                {{ displaySearchCenter(hotelSearch.search_center) }}.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="hotelSearch && (hotelSearchState === 'results' || hotelSearchState === 'empty')"
+          class="live-results-layout"
+        >
+          <section class="live-hotel-list" aria-labelledby="live-list-title">
+            <div class="live-panel-heading">
+              <div>
+                <p class="eyebrow">Provider results</p>
+                <h3 id="live-list-title">Hotel list</h3>
+              </div>
+              <span>{{ hotelSearch.count }} within 5 km</span>
+            </div>
+
+            <ol v-if="liveHotels.length" class="live-hotel-results">
+              <li v-for="(hotel, index) in liveHotels" :key="hotel.place_id">
+                <button
+                  :id="`live-hotel-${index}`"
+                  :ref="(element) => setHotelListButton(hotel.place_id, element)"
+                  type="button"
+                  class="live-hotel-result"
+                  :class="{ 'is-selected': selectedHotelId === hotel.place_id }"
+                  :aria-pressed="selectedHotelId === hotel.place_id"
+                  :aria-label="`Select ${hotel.name} on the map`"
+                  @click="selectLiveHotel(hotel.place_id, 'list')"
+                >
+                  <span class="live-result-number" aria-hidden="true">{{ index + 1 }}</span>
+                  <span class="live-result-copy">
+                    <strong>{{ hotel.name }}</strong>
+                    <span>{{ displayHotelLocation(hotel) }}</span>
+                    <span
+                      v-if="formatHotelDistance(hotel.distance_meters)"
+                      class="live-result-meta"
+                    >
+                      {{ formatHotelDistance(hotel.distance_meters) }}
+                    </span>
+                    <span class="live-result-meta">
+                      {{ hotel.latitude.toFixed(5) }}, {{ hotel.longitude.toFixed(5) }}
+                    </span>
+                  </span>
+                  <span
+                    v-if="selectedHotelId === hotel.place_id"
+                    class="live-selected-label"
+                  >
+                    Selected
+                  </span>
+                </button>
+              </li>
+            </ol>
+
+            <div v-else class="live-empty-list">
+              <strong>No hotel records to list</strong>
+              <span>The confirmed search center still appears on the map.</span>
+            </div>
+          </section>
+
+          <section class="live-map-panel" aria-labelledby="live-map-title">
+            <div class="live-panel-heading">
+              <div>
+                <p class="eyebrow">Same result set</p>
+                <h3 id="live-map-title">Hotel map</h3>
+              </div>
+              <span>Search radius: 5 km</span>
+            </div>
+            <div
+              ref="hotelMapElement"
+              class="live-hotel-map"
+              role="region"
+              :aria-label="`Map of ${hotelSearch.count} hotels near ZIP ${hotelSearch.search_center.postcode}`"
+            ></div>
+          </section>
+        </div>
       </section>
 
       <section class="traveler-bar" aria-labelledby="traveler-title">

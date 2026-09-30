@@ -1,4 +1,220 @@
-# Expedia Lite — Part 2
+# Expedia Lite — IST 402 Assignment 2.1 Part 1
+
+This Part 1 report was started during the required research and early-design
+phase on September 29, 2026, then completed after implementation and
+verification. The research, mockup, and initial decisions in sections 1–3 were
+recorded **before production implementation of the live hotel search and map**.
+
+## Submission Record
+
+- Repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
+- Assessed Part 1 commit: `ASSESSED_COMMIT_PENDING`
+- Submission document: `report.md` (this file)
+- Final audit: [docs/part1-final-audit.md](docs/part1-final-audit.md)
+- Demo procedure: [docs/part1-demo-script.md](docs/part1-demo-script.md)
+- Dated verification: [docs/part1-verification-2026-09-29.md](docs/part1-verification-2026-09-29.md)
+- AI evidence: [prompts/07-part-1-live-hotel-search.md](prompts/07-part-1-live-hotel-search.md)
+
+## 1. Research Notes
+
+The focused research is recorded in
+[Part 1 live hotel search research](docs/part1-location-research.md). The main
+findings that affect implementation are:
+
+- [Geoapify Geocoding](https://apidocs.geoapify.com/docs/geocoding/) supports
+  postcode lookup with `type=postcode` and a U.S. country filter. Expedia Lite
+  will accept a result only when its returned postcode exactly matches the
+  requested five-character ZIP, its country is the United States, and its
+  coordinates are valid.
+- [Geoapify Places](https://apidocs.geoapify.com/docs/places/) supports a hard
+  circle filter and hierarchical categories. The hotel query will use
+  `accommodation.hotel`, a 5,000-metre circle around the resolved ZIP, and a
+  proximity bias only to order results.
+- [Leaflet 1.9.4](https://leafletjs.com/reference.html) supplies keyboard map
+  navigation, keyboard-focusable markers, popups, zoom controls, and an
+  attribution control. The planned OpenStreetMap layer will follow the
+  [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/),
+  including permanently visible attribution.
+- The [Google Maps Place Search pattern](https://developers.google.com/maps/documentation/javascript/places-ui-kit/place-search)
+  demonstrates a selectable result list connected to markers by one place
+  identity. Its success-only example omits the complete validation and failure
+  states required here.
+- [Airbnb's search-result explanation](https://www.airbnb.com/help/article/39)
+  validates showing list and map together for geographic context, but permits
+  different results in each view and uses commercial ranking signals. Expedia
+  Lite will instead render one identical API result set in both views and will
+  not show unreturned prices, ratings, availability, or booking information.
+
+## 2. Early Mockup
+
+[Open the interactive Part 1 early mockup](docs/part1-live-hotel-search-mockup.html).
+
+The mockup was created **before Part 1 implementation**. It is a self-contained
+repository artifact with no network calls, API credentials, or claimed hotel
+facts. Placeholder labels explicitly identify values that must later come from
+the API response.
+
+The mockup shows the ZIP field and Search button, live status/error area,
+hotel-result list, Leaflet map area, shared selected-hotel state, loading,
+invalid ZIP, unresolved ZIP, zero nearby results, and failed request. Its state
+controls make each alternative screen inspectable without changing the real
+application.
+
+## 3. Initial Design Decisions
+
+1. Preserve ZIP values as strings and validate exactly five ASCII digits so
+   leading zeroes remain intact.
+2. Keep the Geoapify key and both provider calls in the backend. The existing
+   configuration path must move from project-root `.env` to ignored
+   `backend/.env`, with a credential-free `backend/.env.example` added during
+   implementation.
+3. Expose one FastAPI search workflow: validate ZIP, confirm the exact U.S.
+   postcode, use its coordinates as the center, then search only within 5 km.
+4. Normalize and return only Geoapify fields that actually exist. Optional
+   missing values remain absent.
+5. Use Geoapify `place_id` as the shared list/map selection key. One Vue state
+   value controls the selected row, marker, and popup.
+6. Keep OpenStreetMap/Leaflet attribution visible and make form, result, marker,
+   and map controls keyboard usable.
+7. Treat ready, loading, results, invalid ZIP, unresolved ZIP, zero results,
+   and request failure as distinct UI states.
+8. Preserve MVC responsibilities: backend services own provider/configuration
+   logic, FastAPI routes own HTTP orchestration, and Vue owns presentation and
+   user interaction.
+
+## 4. Implementation
+
+The completed flow keeps the provider boundary entirely in FastAPI. The Vue
+client sends a ZIP to `GET /api/hotels`; it never calls Geoapify and never
+receives the provider key. `backend/app/geocoding.py` validates exactly five
+ASCII digits, requests a U.S. postcode result, and accepts only a response whose
+postcode exactly equals the requested string and whose country code is `us`.
+The leading-zero ZIP `02108` therefore remains a string throughout the flow.
+
+When the postcode is confirmed, `backend/app/hotel_search.py` passes its
+returned coordinate—not a guessed or substitute point—to
+`backend/app/places.py`. That service requests `accommodation.hotel` with a hard
+5,000-metre circle and proximity bias. It normalizes only provider fields that
+are actually present: identity, name, coordinates, address components,
+distance, and categories. Records without a provider identity, name, or valid
+coordinate are omitted because they cannot support truthful synchronized
+display. No price, rating, availability, room, or booking field is fabricated.
+
+The FastAPI route maps invalid format, unresolved postcode, configuration,
+timeout, network/HTTP/provider-response failure, empty result, and success to
+distinguishable responses. Provider exceptions are converted to fixed safe
+messages so neither the API key nor raw provider response details are returned.
+The credential is loaded from ignored `backend/.env`; the committed
+`backend/.env.example` contains only a placeholder.
+
+Vue uses one returned hotel array for both list rows and Leaflet markers and
+one `selectedHotelId` keyed by Geoapify `place_id`. Selecting a keyboard-usable
+list button pans to and opens its marker; selecting a keyboard-enabled marker
+updates and scrolls to the matching list item. The map frames the confirmed
+center and result coordinates, draws the 5 km search circle, keeps the search
+center visible even with zero hotels, and leaves Leaflet/OpenStreetMap
+attribution visible. Ready, loading, results, invalid, unresolved, no-results,
+and request-failure UI states have separate headings and feedback.
+
+MVC responsibilities remain separated: provider/configuration logic lives in
+backend service modules, FastAPI owns HTTP status and response-model concerns,
+Vue owns presentation and interaction, and the existing SQLite booking models
+and data-access flow remain unchanged.
+
+## 5. Verification Evidence
+
+The complete 16-case expected-versus-observed table is recorded in
+[the September 29 full verification evidence](docs/part1-verification-2026-09-29.md),
+with the reusable procedure retained in [docs/verification.md](docs/verification.md).
+On September 29, 2026:
+
+- all 68 backend tests passed in the project virtual environment and the
+  Vue/Vite production build completed successfully after the browser-found fix;
+- Git ignore checks proved `backend/.env` is ignored while
+  `backend/.env.example` is trackable;
+- real requests confirmed exact U.S. postcodes `16802` and leading-zero
+  `02108`, used 5,000-metre radii, and respectively returned 20 and 19
+  normalized provider hotels at the time of testing;
+- `1680`, `168021`, and `16A$2` produced invalid responses; `00000` produced
+  the unresolved state without a substituted location; and `99999` confirmed
+  an exact U.S. location but produced the distinct zero-hotel state;
+- temporarily stopping only the backend started for this check produced the
+  distinct request-failure state, and restarting it restored successful search.
+  A temporary isolated backend with a deliberately invalid test credential
+  received a real Geoapify rejection and returned a sanitized HTTP 502 without
+  exposing that credential;
+- list-to-marker selection worked with Enter. The first Enter test on a map
+  marker exposed a real defect: Leaflet opened the popup without updating the
+  shared Vue selection. An Enter `keypress` handler was added to use the same
+  selection path as a click, and the rerun selected XV Beacon in both views;
+- the real credential and its environment-variable name were absent from ten
+  checked frontend source/build files and seven sampled frontend/API network
+  responses; and
+- browser inspection found visible Leaflet/OpenStreetMap attribution and no
+  application warning or error entries.
+
+Geoapify data is live, so result ordering and counts can change. The evidence
+records the date and observed count rather than treating that count as a fixed
+application fact.
+
+## 6. AI Use and Disclosure
+
+AI assistance was used for repository inspection, research synthesis,
+implementation, test generation, browser verification, and documentation. The
+submitted work was checked against the live application rather than accepted
+from generated text alone. The retained
+[Part 1 AI evidence log](prompts/07-part-1-live-hotel-search.md) records the
+request, affected files, verification, and a legitimate failed approach: the
+first Leaflet marker keyboard implementation opened a popup on Enter without
+updating Vue selection. The log records the shared-handler correction and the
+successful rerun; it is not a fabricated failure added after the fact.
+
+## 7. Demo
+
+The production-ready [Part 1 demo script](docs/part1-demo-script.md) provides a
+three-to-four-minute walkthrough and the exact safe macOS recording step if a
+video file is requested. The live application and dated verification evidence
+are the repository demo artifacts; no prerecorded video is claimed.
+
+1. Start FastAPI and Vue with the commands in [README.md](README.md).
+2. Enter `02108` and choose **Search live hotels**. Point out the confirmed ZIP,
+   live result count, 5 km circle, numbered rows and markers, and attribution.
+3. Select a second hotel in the list; its map popup opens and both views show
+   the same selected identity. Then select a different marker and show the list
+   selection moving to that hotel.
+4. Enter `2108`, `00000`, and `99999` to demonstrate invalid, unresolved, and
+   zero-nearby-result states without substituted locations.
+5. Explain that visible hotel facts come from the API response and that live
+   results intentionally omit price, rating, availability, and booking claims.
+
+Supporting artifacts: [focused research](docs/part1-location-research.md),
+[pre-implementation early mockup](docs/part1-live-hotel-search-mockup.html),
+[implementation/verification prompt](prompts/07-part-1-live-hotel-search.md),
+[full verification evidence](docs/part1-verification-2026-09-29.md), and
+[verification procedure](docs/verification.md), plus the
+[professor-style final audit](docs/part1-final-audit.md).
+
+## 8. Submission Checklist and Scope Boundary
+
+- Research links, observed strengths/weaknesses, and adopted decisions: present.
+- Pre-implementation early mockup: present and explicitly dated in sequence.
+- FastAPI/Vue implementation with protected backend configuration: present.
+- Expected-versus-observed verification with live ZIPs and date: present.
+- Demo script and exact recording procedure: present.
+- AI disclosure and evidence, including a real revised approach: present.
+- Assessed commit identifier: recorded in the Submission Record above.
+
+This assessed Part 1 work introduces no shortlist, database, authentication,
+or booking feature. The repository's pre-existing Part 2 implementation and
+its checkpoint were deliberately preserved under `AGENTS.md`; the historical
+report below remains only as an appendix and is not part of this Part 1 scope.
+
+---
+
+# Appendix A — Preserved historical Part 2 report
+
+This appendix predates the current Assignment 2.1 Part 1 implementation. It is
+retained for repository continuity and is not submitted as new Part 1 work.
 
 ## Repository and commit
 
