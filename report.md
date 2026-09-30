@@ -8,7 +8,7 @@ recorded **before production implementation of the live hotel search and map**.
 ## Submission Record
 
 - Repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
-- Assessed Part 1 commit: `ASSESSED_COMMIT_PENDING`
+- Assessed Part 1 commit: `de43dd9df5c7cc842e9693f29cd43cb85e43507a`
 - Submission document: `report.md` (this file)
 - Final audit: [docs/part1-final-audit.md](docs/part1-final-audit.md)
 - Demo procedure: [docs/part1-demo-script.md](docs/part1-demo-script.md)

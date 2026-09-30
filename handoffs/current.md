@@ -4,7 +4,8 @@
   historical Part 1 checkpoint remains in Git history under
   `part1-submission`, and the Part 2 checkpoint remains under
   `part2-submission`. The final Assignment 2.1 Part 1 audit is complete; the
-  assessed commit is recorded in `report.md`.
+  assessed implementation commit is
+  `de43dd9df5c7cc842e9693f29cd43cb85e43507a` and is recorded in `report.md`.
 - **Live hotel search:** `GET /api/hotels?zip=02108` validates five ASCII
   digits, confirms the exact returned U.S. postcode through Geoapify, and uses
   that returned coordinate as the center of a hard 5 km
