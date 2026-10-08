@@ -9,6 +9,7 @@ implementation or demo.
 - Repository: <https://github.com/jakebutler22/Expedia-lite>
 - Public branch containing the work: <https://github.com/jakebutler22/Expedia-lite/tree/main>
 - Assessed Part 1 implementation commit: <https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a>
+- Part 1 regrade evidence package commit: <https://github.com/jakebutler22/Expedia-lite/commit/86515b81b29e2599c16694e1c4927e1eac44ac18>
 - Report: <https://github.com/jakebutler22/Expedia-lite/blob/main/report.md>
 - Recorded Part 1 demo: <https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4>
 - Verification record: <https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md>

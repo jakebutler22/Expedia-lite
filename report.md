@@ -9,6 +9,7 @@ recorded **before production implementation of the live hotel search and map**.
 
 - Repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
 - Public assessed Part 1 commit: [`de43dd9df5c7cc842e9693f29cd43cb85e43507a`](https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a)
+- Public Part 1 regrade evidence package: [`86515b81b29e2599c16694e1c4927e1eac44ac18`](https://github.com/jakebutler22/Expedia-lite/commit/86515b81b29e2599c16694e1c4927e1eac44ac18)
 - Public branch containing the Part 1 code: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
 - Screen-recorded demo: [Expedia Lite Part 1 demo (MP4)](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
 - Submission document: `report.md` (this file)
