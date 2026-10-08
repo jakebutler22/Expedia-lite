@@ -273,3 +273,232 @@ Verification was performed on September 14–15, 2026.
 - [Current handoff](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/handoffs/current.md)
 
 Part 2's required local SQLite search and booking CRUD workflow is complete and hardened. Remaining limitations are appropriate to the classroom scope: demo travelers only, no authentication or authorization, no production deployment controls, no dedicated frontend lint command, and no automated Vue component/end-to-end suite. The next task is the next assigned feature or a separately approved expansion of automated frontend coverage.
+
+---
+
+# Appendix B — Revised Assignment 2 Part 2: Business Intelligence with RAG and an LLM
+
+This is the revised Part 2 submission section. It preserves the assessed Part 1
+report and the historical Part 2 report above. The local hotel-storage
+foundation existed before this chatbot revision.
+
+## B1. Project access and reproducibility
+
+- Public repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite). Anonymous access was confirmed October 7, 2026.
+- Assessed implementation commit: [`e35c201ab36e83b814a678587646d19816bc3826`](https://github.com/jakebutler22/Expedia-lite/commit/e35c201ab36e83b814a678587646d19816bc3826)
+- Part 1 assessed commit: `de43dd9df5c7cc842e9693f29cd43cb85e43507a`
+- Submission file: `report.md` (this file)
+
+The assessed commit contains the application, tests, fixed sample, research,
+mockup, evidence, prompts, and demo script. It excludes `backend/.env`, working
+databases/backups, `node_modules`, and build output. The local commits must be
+pushed before an instructor can retrieve this version; no push or publication
+is performed without authorization.
+
+Start the app in two Mac Terminal windows:
+
+```bash
+cd "/Users/jakebutler/Documents/ChatGPT/Expedia-lite"
+backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --reload --port 8000
+```
+
+```bash
+cd "/Users/jakebutler/Documents/ChatGPT/Expedia-lite"
+npm --prefix frontend run dev
+```
+
+Open `http://127.0.0.1:5173`; API documentation is at
+`http://127.0.0.1:8000/docs`. Create ignored `backend/.env` from
+`backend/.env.example` with only backend settings:
+
+```dotenv
+GEOAPIFY_API_KEY=<your Geoapify key>
+OPENROUTER_API_KEY=<your OpenRouter key>
+OPENROUTER_MODEL=<the exact class-approved free NVIDIA Nemotron model ID>
+```
+
+The exact class model ID was absent from supplied materials and was not guessed.
+No credential belongs in Vue, a `VITE_` variable, this report, the recording,
+or Git. Verified versions were Python 3.14.7, SQLite 3.50.4, FastAPI 0.141.1,
+Pydantic 2.13.5, HTTPX 0.28.1, Uvicorn 0.52.4, pytest 9.1.1, Node 24.12.0,
+npm 11.6.2, Vue 3.5.42, Leaflet 1.9.4, Vite 8.2.2, and Vue Vite plugin 6.0.8.
+No dependency was installed or upgraded during final verification.
+
+## B2. Research notes and design decisions
+
+The [focused research](docs/revised-part2-rag-research.md) records source-linked
+strengths, weaknesses, current capabilities/limits, and decisions. It cites the
+official [OpenRouter quickstart](https://openrouter.ai/docs/quickstart),
+[chat API](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request),
+[free variants](https://openrouter.ai/docs/guides/routing/model-variants/free),
+[pricing](https://openrouter.ai/pricing/),
+[Geoapify geocoding](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/),
+[Geoapify Places](https://apidocs.geoapify.com/docs/places/),
+[Leaflet](https://leafletjs.com/reference.html),
+[Python SQLite](https://docs.python.org/3/library/sqlite3.html), and
+[SQLite security](https://www.sqlite.org/security.html).
+
+Useful patterns were a question beside structured hotel data, immediate loading
+feedback, visible evidence, connected chat/list/map selection, and explicit
+insufficient-data behavior. Weak patterns were ungrounded claims, unclear
+freshness, sending unrelated traveler/booking data, confusing simulated values
+with live inventory, guessing a model, and unconstrained generated SQL.
+
+The adopted design uses two non-streaming requests to one explicitly configured
+free Nemotron model. Request one proposes one SQL `SELECT` or
+`insufficient_data`. FastAPI—not the model—applies a single-statement check,
+deny-by-default SQLite authorizer, three-table allowlist, and work/result limits
+before execution. Request two receives the question, validated SQL, and exact
+bounded records. Vue displays the whole safe trace. Assignment 1 users, trips,
+bookings, and supplied hotel rows remain inaccessible; rates and room counts
+are always labeled simulated classroom data.
+
+## B3. Early mockup
+
+[Open the revised Part 2 early mockup](docs/revised-part2-chatbot-early-mockup.html).
+It was saved October 7, 2026 **before production chatbot implementation** and
+shows question, loading, answer, no-match, insufficient-data, and error states
+with the existing list/map context.
+
+The mockup assumed static application retrieval and one model request. A later
+benchmark required model-proposed SQL and two requests with validation/execution
+between them. Production therefore added proposed SQL, validation, execution,
+exact-record, and second-request evidence while retaining the original state
+design. This genuine revision is documented in the
+[research](docs/revised-part2-rag-research.md#requirement-driven-revision-after-the-early-mockup)
+and [AI evidence](prompts/09-revised-part2-final-verification.md).
+
+## B4. Implemented architecture
+
+`POST /api/hotel-insights` makes request one for strict JSON containing one
+`SELECT` or `insufficient_data`. `backend/app/safe_sql.py` rejects comments,
+semicolons, writes, multiple statements, administrative/extension work,
+unauthorized tables/functions, excess VM work, and oversized results. It
+compile-checks then executes under the authorizer with limits of 50 rows, 20
+columns, and 50,000 serialized bytes. Request two receives exact SQL and exact
+records and returns `answer`, `no_matches`, or `insufficient_data`. Rejected SQL
+is never executed and never reaches request two; successful empty retrieval
+does reach request two. Provider errors are stage-specific and sanitized.
+
+Every ZIP search still reads `GET /api/saved-hotels?zip=<ZIP>` first. A local
+hit shows **Saved locally** and prohibits the Part 1 endpoint; only successful
+empty local data falls back to `GET /api/hotels?zip=<ZIP>` and shows **API
+results**; a local failure stops. Add/remove, committed-value rereads, leading
+zero ZIPs, stored coordinates, October 10–14 simulated values, and list/map
+synchronization remain intact. Part 1 still confirms the exact U.S. postcode
+and uses its returned point for a hard 5 km Geoapify Places query.
+
+## B5. Screen-recorded demonstration
+
+- Accessible video URL: **PENDING — not recorded/uploaded**
+- Local recording file: **PENDING**
+- Genuine live model ID/date: **PENDING configuration and live run**
+- DB Browser **Write Changes** checkpoint: **PENDING user action**
+
+The [recording handoff](docs/revised-part2-demo-script.md) gives exact,
+beginner-friendly Mac Terminal, DB Browser, browser, and recording steps. It
+covers all seven required items: foundation; complete live two-request trace;
+database comparison; no-match/insufficient; labeled rejected-query fixture;
+manual rate/room edit and reread; persistence, scoped removal, and preservation.
+No fixture or stub is claimed as live-provider evidence.
+
+## B6. Verification record
+
+The full chronology is in the
+[October 7 evidence log](docs/revised-part2-evidence-log-2026-10-07.md). The
+[fixed JSON sample](backend/tests/fixtures/revised_part2_fixed_sample.json) is
+labeled fixture-only and independent of changing live hotel counts.
+
+Repeat focused checks from the repository root:
+
+```bash
+cd backend
+.venv/bin/python -m pytest -q tests/test_hotel_insights.py
+.venv/bin/python scripts/revised_part2_fixture_demo.py
+```
+
+Run all checks from the root with:
+
+```bash
+backend/.venv/bin/python -m pytest -q backend/tests
+npm --prefix frontend test
+npm --prefix frontend run build
+```
+
+### Automated and fixed-fixture evidence
+
+| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
+| --- | --- | --- | --- | --- |
+| Full backend suite | Existing and revised behavior passes using isolated mutation DBs. | **104 passed**; two dependency deprecation warnings only. | E13–E14; `backend/tests/` | No dependency changes. |
+| Frontend tests/build | Contracts pass and Vue compiles. | **21 passed**; Vite transformed 15 modules and built. | E14; `frontend/tests/` | No new E2E package. |
+| Fixed ZIP `02108`, Oct. 10 check-in/Oct. 13 checkout, two rooms | Request one → validation/execution → request two; exact rows; checkout excluded; integer cents. | Eligible Inn record contained Oct. 10–12, minimum 2 rooms, and **67,000 cents ($670.00)**. Oct. 13 checkout data was excluded. | Fixed JSON; focused ordering/exact-record test; E14 browser observation | Two-response stub, not live provider. |
+| Duplicate `02108`/`02109` associations | Do not duplicate nights or inflate total. | One correct qualifying record and total. | Fixed JSON; focused tests | Fixture. |
+| Missing middle night, sold-out included night, insufficient rooms | Hotel does not qualify. | Each was excluded. | Fixed JSON; focused tests | Fixture. |
+| Successful empty SQL result | Request two still runs and returns no matches. | Empty exact records reached request two; `no_matches`. | `test_successful_empty_query_still_calls_second_model` | Simulated provider. |
+| November 2026 question | Insufficient coverage; no SQL/second request. | `insufficient_data`; validation not run; execution/second request false. | Focused insufficient test | Simulated provider. |
+| `DELETE`, multiple statements, unauthorized table, `PRAGMA`, `ATTACH`, extension | Reject before execution/second request; data unchanged. | All rejected; execution false; second calls zero; protected rows identical. | Parameterized tests and fixture demo; E13 | Fixture-only rejection demo. |
+| Exceed work/row/column/byte limit | Abort without oversized model context. | All limit tests used the safe failure path. | Focused tests; E13 | Isolated artificial data. |
+| Malformed stage one/two and simulated 429 | No unsafe execution; stage-specific error. | First-stage failures made no second call; second-stage failures stayed answer-generation errors. | Focused tests; E13 | 429 simulated; no quota consumed. |
+| Credential boundary | Keys remain backend-only and absent from responses. | `.env` ignored; safe example placeholders; no Vue provider key/request; safe health/errors. | E11, `.gitignore` | Real keys absent from evidence. |
+| Actual Uvicorn dependency cleanup | Request SQLite connection closes safely. | First run exposed cross-thread `sqlite3.ProgrammingError`; connection setup/regression test fixed it; real request paths then returned 200. | E14; `test_database.py` | Genuine failure fixed and rerun. |
+
+### Genuine browser/live-service evidence
+
+| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
+| --- | --- | --- | --- | --- |
+| Search `16802` on October 7, 2026 with empty isolated local data | Local GET first; empty success alone falls back; API list/map agree. | Log showed saved lookup then `GET /api/hotels?zip=16802`; both showed **API results**. | [Local verification](docs/local-hotel-storage-verification-2026-10-06.md#october-7-re-verification) | Live Geoapify count intentionally not fixed. |
+| Repeat `16802` after save | Fresh local values; no Part 1 request. | After refresh only local GET occurred; **Saved locally**, nights, and stored marker shown. | Same evidence | Isolated DB. |
+| Commit Oct. 10 = 12,345 cents/zero rooms and search | Reread committed values including zero. | UI showed `$123.45` and `0` without restart. | Same evidence | DB Browser click itself still pending. |
+| Local lookup failure | Clear error, no fallback. | **Saved hotel lookup unavailable**; fallback not requested. | Same evidence | Backend restarted afterward. |
+| List/marker keyboard selection | Same identity in both views; attribution visible. | List selected marker; marker Enter selected list row. | Same evidence | Genuine browser observation. |
+| Final fixed-sample UI | Complete trace and exact answer visible in production app. | Vue/FastAPI showed proposed SQL, passed validation, execution, exact Eligible Inn row, request two, and $670 answer; `02109` local map/nights/attribution also appeared. | E14 | Provider stages were labeled stub. |
+| Genuine configured OpenRouter success | Two real calls and actual model ID/date captured. | **PENDING:** key/model absent; no model guessed. | E15 | User configuration required. |
+
+### Manual evidence still pending
+
+| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
+| --- | --- | --- | --- | --- |
+| DB Browser set 15,750 cents/7 rooms, click **Write Changes**, repeat search/question | Both reread `$157.50` and `7` without restart. | **PENDING manual course checkpoint.** | Demo step 6 | DB Browser not detected or installed. |
+| Record/upload full demo | Instructor can watch all steps without access request. | **PENDING.** | B5/demo script | User records/uploads/tests link. |
+
+The canonical DB stayed byte-identical during isolated RAG verification:
+SHA-256 `c43f08bd015ddb73b498d0cff83b3e49ff251fbea4e485ceee0a7b38e5a75622`;
+integrity was `ok`, foreign-key check empty, and every original Assignment 1
+row matched the verified baseline in both directions—not only by count.
+
+## B7. AI disclosure and evidence log
+
+| Tool/model actually used | Purpose and boundary |
+| --- | --- |
+| OpenAI Codex, GPT-5-based coding agent as identified by the development environment | Audit, research synthesis, implementation, tests, browser automation, corrections, and docs; outputs were verified. |
+| Codex web retrieval with the same agent | Official-source research and anonymous GitHub access check; not application hotel data. |
+| Process-local two-response stub | Deterministic verification code, **not AI** and not live OpenRouter. |
+| OpenRouter/NVIDIA Nemotron | **Not used live because configuration is absent.** No model identity is fabricated. |
+
+Selected evidence is in [prompt 08](prompts/08-revised-part2-rag.md) and
+[prompt 09](prompts/09-revised-part2-final-verification.md). Key excerpts were
+“request one must propose SQL,” “validated SQL execution between them,” “exact
+retrieved records passed to request two,” “never run destructive tests against
+the real assignment database,” and “never mark pending evidence complete.”
+They drove the safe-SQL module, two-stage service, isolated sample, visible
+trace, and pending labels.
+
+Two real revisions are documented. The early one-request/static-query design
+was replaced when it failed the later two-request benchmark (research revision
+and E12). Then an actual Uvicorn run exposed cross-thread SQLite cleanup; the
+connection configuration and regression test were corrected before complete
+suites and real endpoints passed (E14). Neither failure was invented.
+
+## B8. Access gaps, remaining actions, and scope
+
+The repository is publicly readable, but the assessed local commits remain
+unavailable there until the user authorizes/performs a push. The recording must
+also be uploaded somewhere accessible without a request and tested signed out.
+Still pending: private OpenRouter key and exact class model for one genuine
+two-request run, the recorded DB Browser **Write Changes** checkpoint, and the
+video URL. Credentials must stay out of all evidence.
+
+No vector database, embeddings, agent framework, deployment, payment, real
+inventory/booking, silent paid fallback, or unrelated feature was added.
+Protected Part 1 behavior/checkpoints, original Assignment 1 records,
+local-first save/remove, and cancellation-versus-deletion semantics remain.
