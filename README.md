@@ -24,7 +24,7 @@ frontend/                 Vue search and booking CRUD interface
 docs/                     Design and verification records
 prompts/                  Selected numbered development prompts
 handoffs/current.md       Current project state and next task
-report.md                 Part 1 implementation report and preserved Part 2 report
+report.md                 Revised Part 2 submission report (Part 1 links preserved)
 ```
 
 ## Setup
@@ -58,7 +58,7 @@ OPENROUTER_API_KEY=<your local OpenRouter key>
 OPENROUTER_MODEL=<the exact free Nemotron model slug demonstrated in class>
 ```
 
-The exact class model slug is not present in the available repository or course attachment and is intentionally not guessed. Confirm the exact class-provided entry is still free in the live OpenRouter catalog before entering it. Expedia Lite accepts only an explicit NVIDIA Nemotron `:free` model setting and has no automatic or paid fallback. Do not put either provider key in `frontend/.env`, Vue source, or a `VITE_` variable; `VITE_` values are bundled for the browser.
+The exact class model slug is not present in the available repository or course material and is intentionally not guessed. Confirm the exact class-provided entry is still free in the live OpenRouter catalog before entering it. Expedia Lite accepts only an explicit NVIDIA Nemotron `:free` model setting and has no automatic or paid fallback. Do not put either provider key in `frontend/.env`, Vue source, or a `VITE_` variable; `VITE_` values are bundled for the browser.
 
 `backend/app/geocoding.py` owns exact U.S. postcode confirmation, while `backend/app/places.py` owns the 5 km hotel query and provider normalization. `GET /api/hotels?zip=02108` runs the complete workflow. A successful response includes the confirmed search center, radius, count, and only real available Geoapify hotel fields. Invalid, unresolved, zero-result, configuration, timeout, and upstream-failure outcomes remain distinguishable. The earlier ZIP-only demonstration endpoints remain available for compatibility.
 
@@ -150,4 +150,4 @@ unfinished observations as explicit placeholders.
 
 ## Current limitations
 
-The project is intended for local classroom use. Geoapify results and counts can change as its place data changes. The exact class OpenRouter model slug and a local OpenRouter API key are still required for a genuine live-model demo; the implementation does not guess or fall back to a paid model. The application does not include authentication, authorization, production deployment controls, vector retrieval, embeddings, agent behavior, actual inventory, or an automated Vue component/end-to-end suite.
+The project is intended for local classroom use. Geoapify results and counts can change as its place data changes. The exact class OpenRouter model slug and a local OpenRouter API key are still required for the final genuine live-model demo; the implementation does not guess or fall back to a paid model. The application does not include authentication, authorization, production deployment controls, vector retrieval, embeddings, agent behavior, actual inventory, or an automated Vue component/end-to-end suite.

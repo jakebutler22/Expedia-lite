@@ -177,4 +177,52 @@ test('HTTP, network, and malformed responses are honest failures', async (t) => 
       /invalid response/,
     )
   })
+
+  await t.test('answer and no-match statuses must agree with record count', async () => {
+    for (const item of [
+      {
+        status: 'answer',
+        count: 0,
+        records: [],
+        answer: 'Invented answer.',
+        trace: trace({ retrieved_records: [] }),
+      },
+      {
+        status: 'no_matches',
+        count: 1,
+        records,
+        message: 'No saved hotels match.',
+        trace: trace(),
+      },
+    ]) {
+      await assert.rejects(
+        askHotelInsights({
+          apiUrl,
+          question,
+          fetchImpl: async () => response({ question, model, ...item }),
+        }),
+        /invalid response/,
+      )
+    }
+  })
+
+  await t.test('trace flags must describe one valid pipeline state', async () => {
+    await assert.rejects(
+      askHotelInsights({
+        apiUrl,
+        question,
+        fetchImpl: async () =>
+          response({
+            status: 'answer',
+            question,
+            count: 1,
+            records,
+            answer: 'Saved Hotel matches.',
+            model,
+            trace: trace({ second_request_sent: false }),
+          }),
+      }),
+      /invalid response/,
+    )
+  })
 })

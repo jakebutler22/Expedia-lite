@@ -38,6 +38,29 @@ function validateTrace(trace, records, model) {
   ) {
     throw invalidResponse()
   }
+
+  const isPassed =
+    trace.validation_status === 'passed' &&
+    typeof trace.proposed_sql === 'string' &&
+    Boolean(trace.proposed_sql.trim()) &&
+    trace.query_executed &&
+    trace.second_request_sent
+  const isRejected =
+    trace.validation_status === 'rejected' &&
+    typeof trace.proposed_sql === 'string' &&
+    Boolean(trace.proposed_sql.trim()) &&
+    !trace.query_executed &&
+    !trace.second_request_sent &&
+    records.length === 0
+  const isNotRun =
+    trace.validation_status === 'not_run' &&
+    trace.proposed_sql === null &&
+    !trace.query_executed &&
+    !trace.second_request_sent &&
+    records.length === 0
+  if (!isPassed && !isRejected && !isNotRun) {
+    throw invalidResponse()
+  }
   return trace
 }
 
@@ -57,6 +80,16 @@ function validateResult(payload, question) {
     throw invalidResponse()
   }
   validateTrace(payload.trace, payload.records, payload.model)
+
+  const statusAgreesWithTrace =
+    (payload.status === 'answer' && payload.count > 0 && payload.trace.validation_status === 'passed') ||
+    (payload.status === 'no_matches' && payload.count === 0 && payload.trace.validation_status === 'passed') ||
+    (payload.status === 'rejected_query' && payload.count === 0 && payload.trace.validation_status === 'rejected') ||
+    (payload.status === 'insufficient_data' &&
+      (payload.trace.validation_status === 'not_run' || payload.trace.validation_status === 'passed'))
+  if (!statusAgreesWithTrace) {
+    throw invalidResponse()
+  }
 
   if (payload.status === 'answer') {
     if (typeof payload.answer !== 'string' || !payload.answer.trim()) {

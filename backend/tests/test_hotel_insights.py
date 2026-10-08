@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app import openrouter
 from app.database import DATA_DIRECTORY, connect_database, initialize_database
 from app.hotel_insights import answer_saved_hotel_question
+from app.openrouter import OpenRouterResponseError
 from app.safe_sql import GeneratedQueryRejectedError, execute_validated_query
 
 
@@ -265,6 +266,46 @@ def test_successful_empty_query_reaches_second_request_as_no_matches(
     assert result["count"] == 0
     assert result["trace"]["query_executed"] is True
     assert result["trace"]["second_request_sent"] is True
+
+
+@pytest.mark.parametrize(
+    ("sql", "outcome"),
+    [
+        (
+            "SELECT provider_place_id FROM saved_hotels WHERE 0 LIMIT 5",
+            {"status": "answer", "answer": "A hotel exists."},
+        ),
+        (
+            "SELECT provider_place_id FROM saved_hotels LIMIT 5",
+            {
+                "status": "no_matches",
+                "message": "No saved hotels match the requested conditions.",
+            },
+        ),
+    ],
+)
+def test_answer_status_must_agree_with_retrieved_records(
+    connection: sqlite3.Connection,
+    sql: str,
+    outcome: dict[str, str],
+) -> None:
+    seed_fixed_sample(connection)
+
+    def sql_requester(_question):
+        return {"status": "query", "sql": sql}, OPENROUTER_TEST_MODEL
+
+    def answer_requester(_question, _sql, _records):
+        return outcome, OPENROUTER_TEST_MODEL
+
+    with pytest.raises(OpenRouterResponseError) as error:
+        answer_saved_hotel_question(
+            connection,
+            "Find saved hotels.",
+            sql_requester=sql_requester,
+            answer_requester=answer_requester,
+        )
+
+    assert error.value.stage == "answer_generation"
 
 
 @pytest.mark.parametrize(

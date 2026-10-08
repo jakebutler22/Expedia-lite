@@ -109,6 +109,10 @@ def answer_saved_hotel_question(
     )
     if answer_model != model:
         raise OpenRouterResponseError("answer_generation")
+    if outcome["status"] == "answer" and not records:
+        raise OpenRouterResponseError("answer_generation")
+    if outcome["status"] == "no_matches" and records:
+        raise OpenRouterResponseError("answer_generation")
 
     response: dict[str, object] = {
         "status": outcome["status"],

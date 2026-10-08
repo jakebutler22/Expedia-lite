@@ -87,3 +87,15 @@ the primary documented design revision for the final AI evidence log.
 ## Provider-setting gap
 
 The exact class Nemotron model ID remains genuinely missing. Add the class-provided slug to `OPENROUTER_MODEL` in ignored `backend/.env` after confirming that exact catalog entry is still free. Add the OpenRouter key beside it as `OPENROUTER_API_KEY`. Do not paste either value into source control or the frontend.
+
+### October 8 catalog recheck
+
+The official Models API was checked again immediately before final
+verification. It still listed several different zero-price NVIDIA Nemotron
+free entries, including `nvidia/nemotron-3.5-lightning:free`,
+`nvidia/nemotron-3-super-120b-a12b:free`, and
+`nvidia/nemotron-3-ultra-550b-a55b:free`, all with `max_tokens` and
+`temperature` support. Because the available course pages still did not name
+which one was demonstrated, this confirms rather than removes the ambiguity:
+the submission must record the user-supplied class slug actually used and must
+not relabel another current free model as the class model.

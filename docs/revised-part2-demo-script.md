@@ -5,9 +5,11 @@ ignored `backend/.env` contains a real `OPENROUTER_API_KEY` and the exact
 class-approved free Nemotron `OPENROUTER_MODEL`. Never show that file, its key,
 browser authorization headers, or Terminal environment output in the video.
 
-DB Browser for SQLite was not detectable during the October 7 audit. Its
-checkpoints below remain manual and must not be claimed until the Mac app is
-available and the actions are genuinely recorded.
+DB Browser for SQLite 3.13.1 was available on October 8. The audit genuinely
+opened the canonical database, changed Beacon Hill Hotel and Bistro's October
+10 values to 15,750 cents and 7 rooms, clicked **Write Changes**, and observed
+Vue reread `$157.50` and `7` before and after a full process restart. The final
+recording should repeat or clearly show this already-verified checkpoint.
 
 ## Mac Terminal — start and precheck
 
@@ -177,7 +179,9 @@ and preserved Assignment 1 data.
 - Local recording file: **[PENDING]**
 - Accessible video URL: **[PENDING]**
 - Live model ID/date: **[PENDING configured provider and genuine two-call run]**
-- DB Browser Write Changes checkpoint: **[PENDING manual action]**
+- DB Browser Write Changes checkpoint: **VERIFIED October 8, 2026** using
+  Beacon Hill Hotel and Bistro, `2026-10-10`, 10,000 cents/20 rooms → 15,750
+  cents/7 rooms; Vue displayed `$157.50`/`7` without restart and after restart.
 
 After recording, upload the video somewhere the instructor can open without a
 new access request, test the link in a signed-out/private window, then replace

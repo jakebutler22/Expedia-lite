@@ -1,512 +1,303 @@
-# Expedia Lite — IST 402 Assignment 2.1 Part 1
+# Expedia Lite — Revised Assignment 2 Part 2
 
-This Part 1 report was started during the required research and early-design
-phase on September 29, 2026, then completed after implementation and
-verification. The research, mockup, and initial decisions in sections 1–3 were
-recorded **before production implementation of the live hotel search and map**.
+## Submission record
 
-## Submission Record
-
-- Repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
-- Public assessed Part 1 commit: [`de43dd9df5c7cc842e9693f29cd43cb85e43507a`](https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a)
-- Public Part 1 regrade evidence package: [`86515b81b29e2599c16694e1c4927e1eac44ac18`](https://github.com/jakebutler22/Expedia-lite/commit/86515b81b29e2599c16694e1c4927e1eac44ac18)
-- Public branch containing the Part 1 code: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
-- Screen-recorded demo: [Expedia Lite Part 1 demo (MP4)](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
-- Submission document: `report.md` (this file)
-- Regrade handoff: [docs/part1-regrade-handoff.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-regrade-handoff.md)
-- Final audit: [docs/part1-final-audit.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-final-audit.md)
-- Demo procedure: [docs/part1-demo-script.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-demo-script.md)
-- Dated verification: [docs/part1-verification-2026-09-29.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md)
-- AI evidence: [prompts/07-part-1-live-hotel-search.md](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md)
-
-## 1. Research Notes
-
-The focused research is recorded in
-[Part 1 live hotel search research](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-location-research.md). The main
-findings that affect implementation are:
-
-- [Geoapify Geocoding](https://apidocs.geoapify.com/docs/geocoding/) supports
-  postcode lookup with `type=postcode` and a U.S. country filter. Expedia Lite
-  will accept a result only when its returned postcode exactly matches the
-  requested five-character ZIP, its country is the United States, and its
-  coordinates are valid.
-- [Geoapify Places](https://apidocs.geoapify.com/docs/places/) supports a hard
-  circle filter and hierarchical categories. The hotel query will use
-  `accommodation.hotel`, a 5,000-metre circle around the resolved ZIP, and a
-  proximity bias only to order results.
-- [Leaflet 1.9.4](https://leafletjs.com/reference.html) supplies keyboard map
-  navigation, keyboard-focusable markers, popups, zoom controls, and an
-  attribution control. The planned OpenStreetMap layer will follow the
-  [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/),
-  including permanently visible attribution.
-- The [Google Maps Place Search pattern](https://developers.google.com/maps/documentation/javascript/places-ui-kit/place-search)
-  demonstrates a selectable result list connected to markers by one place
-  identity. Its success-only example omits the complete validation and failure
-  states required here.
-- [Airbnb's search-result explanation](https://www.airbnb.com/help/article/39)
-  validates showing list and map together for geographic context, but permits
-  different results in each view and uses commercial ranking signals. Expedia
-  Lite will instead render one identical API result set in both views and will
-  not show unreturned prices, ratings, availability, or booking information.
-
-## 2. Early Mockup
-
-[Open the Part 1 early mockup](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-live-hotel-search-mockup.html).
-
-The mockup was created **before Part 1 implementation**. It is a self-contained
-repository artifact with no network calls, API credentials, or claimed hotel
-facts. Placeholder labels explicitly identify values that must later come from
-the API response.
-
-The mockup shows the ZIP field and Search button, live status/error area,
-hotel-result list, Leaflet map area, shared selected-hotel state, loading,
-invalid ZIP, unresolved ZIP, zero nearby results, and failed request. Its state
-controls make each alternative screen inspectable without changing the real
-application.
-
-## 3. Initial Design Decisions
-
-1. Preserve ZIP values as strings and validate exactly five ASCII digits so
-   leading zeroes remain intact.
-2. Keep the Geoapify key and both provider calls in the backend. The existing
-   configuration path must move from project-root `.env` to ignored
-   `backend/.env`, with a credential-free `backend/.env.example` added during
-   implementation.
-3. Expose one FastAPI search workflow: validate ZIP, confirm the exact U.S.
-   postcode, use its coordinates as the center, then search only within 5 km.
-4. Normalize and return only Geoapify fields that actually exist. Optional
-   missing values remain absent.
-5. Use Geoapify `place_id` as the shared list/map selection key. One Vue state
-   value controls the selected row, marker, and popup.
-6. Keep OpenStreetMap/Leaflet attribution visible and make form, result, marker,
-   and map controls keyboard usable.
-7. Treat ready, loading, results, invalid ZIP, unresolved ZIP, zero results,
-   and request failure as distinct UI states.
-8. Preserve MVC responsibilities: backend services own provider/configuration
-   logic, FastAPI routes own HTTP orchestration, and Vue owns presentation and
-   user interaction.
-
-## 4. Implementation
-
-The completed flow keeps the provider boundary entirely in FastAPI. The Vue
-client sends a ZIP to `GET /api/hotels`; it never calls Geoapify and never
-receives the provider key. `backend/app/geocoding.py` validates exactly five
-ASCII digits, requests a U.S. postcode result, and accepts only a response whose
-postcode exactly equals the requested string and whose country code is `us`.
-The leading-zero ZIP `02108` therefore remains a string throughout the flow.
-
-When the postcode is confirmed, `backend/app/hotel_search.py` passes its
-returned coordinate—not a guessed or substitute point—to
-`backend/app/places.py`. That service requests `accommodation.hotel` with a hard
-5,000-metre circle and proximity bias. It normalizes only provider fields that
-are actually present: identity, name, coordinates, address components,
-distance, and categories. Records without a provider identity, name, or valid
-coordinate are omitted because they cannot support truthful synchronized
-display. No price, rating, availability, room, or booking field is fabricated.
-
-The FastAPI route maps invalid format, unresolved postcode, configuration,
-timeout, network/HTTP/provider-response failure, empty result, and success to
-distinguishable responses. Provider exceptions are converted to fixed safe
-messages so neither the API key nor raw provider response details are returned.
-The credential is loaded from ignored `backend/.env`; the committed
-`backend/.env.example` contains only a placeholder.
-
-Vue uses one returned hotel array for both list rows and Leaflet markers and
-one `selectedHotelId` keyed by Geoapify `place_id`. Selecting a keyboard-usable
-list button pans to and opens its marker; selecting a keyboard-enabled marker
-updates and scrolls to the matching list item. The map frames the confirmed
-center and result coordinates, draws the 5 km search circle, keeps the search
-center visible even with zero hotels, and leaves Leaflet/OpenStreetMap
-attribution visible. Ready, loading, results, invalid, unresolved, no-results,
-and request-failure UI states have separate headings and feedback.
-
-MVC responsibilities remain separated: provider/configuration logic lives in
-backend service modules, FastAPI owns HTTP status and response-model concerns,
-Vue owns presentation and interaction, and the existing SQLite booking models
-and data-access flow remain unchanged.
-
-## 5. Verification Evidence
-
-The complete 16-case expected-versus-observed table is recorded in
-[the September 29 full verification evidence](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md),
-with the reusable procedure retained in [docs/verification.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/verification.md).
-On September 29, 2026:
-
-- all 68 backend tests passed in the project virtual environment and the
-  Vue/Vite production build completed successfully after the browser-found fix;
-- Git ignore checks proved `backend/.env` is ignored while
-  `backend/.env.example` is trackable;
-- real requests confirmed exact U.S. postcodes `16802` and leading-zero
-  `02108`, used 5,000-metre radii, and respectively returned 20 and 19
-  normalized provider hotels at the time of testing;
-- `1680`, `168021`, and `16A$2` produced invalid responses; `00000` produced
-  the unresolved state without a substituted location; and `99999` confirmed
-  an exact U.S. location but produced the distinct zero-hotel state;
-- temporarily stopping only the backend started for this check produced the
-  distinct request-failure state, and restarting it restored successful search.
-  A temporary isolated backend with a deliberately invalid test credential
-  received a real Geoapify rejection and returned a sanitized HTTP 502 without
-  exposing that credential;
-- list-to-marker selection worked with Enter. The first Enter test on a map
-  marker exposed a real defect: Leaflet opened the popup without updating the
-  shared Vue selection. An Enter `keypress` handler was added to use the same
-  selection path as a click, and the rerun selected XV Beacon in both views;
-- the real credential and its environment-variable name were absent from ten
-  checked frontend source/build files and seven sampled frontend/API network
-  responses; and
-- browser inspection found visible Leaflet/OpenStreetMap attribution and no
-  application warning or error entries.
-
-Geoapify data is live, so result ordering and counts can change. The evidence
-records the date and observed count rather than treating that count as a fixed
-application fact.
-
-## 6. AI Use and Disclosure
-
-AI assistance was used for repository inspection, research synthesis,
-implementation, test generation, browser verification, and documentation. The
-submitted work was checked against the live application rather than accepted
-from generated text alone. The retained
-[Part 1 AI evidence log](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md) records the
-request, affected files, verification, and a legitimate failed approach: the
-first Leaflet marker keyboard implementation opened a popup on Enter without
-updating Vue selection. The log records the shared-handler correction and the
-successful rerun; it is not a fabricated failure added after the fact.
-
-## 7. Demo
-
-The [screen-recorded Part 1 demonstration](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
-was recorded from the running application on October 8, 2026. It is a 72-second
-MP4 stored at `docs/videos/expedia-lite-part1-demo.mp4`. The recording shows the
-leading-zero live search, live API result list and map, visible 5 km label and
-map attribution, synchronized list/marker selection, loading, invalid ZIP,
-unresolved ZIP, zero-results, and a final successful state. The accompanying
-[Part 1 demo script](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-demo-script.md) remains the repeatable narration
-and walkthrough procedure.
-
-1. Start FastAPI and Vue with the commands in [README.md](https://github.com/jakebutler22/Expedia-lite/blob/main/README.md).
-2. Enter `02108` and choose **Search live hotels**. Point out the confirmed ZIP,
-   live result count, 5 km circle, numbered rows and markers, and attribution.
-3. Select a second hotel in the list; its map popup opens and both views show
-   the same selected identity. Then select a different marker and show the list
-   selection moving to that hotel.
-4. Enter `2108`, `00000`, and `99999` to demonstrate invalid, unresolved, and
-   zero-nearby-result states without substituted locations.
-5. Explain that visible hotel facts come from the API response and that live
-   results intentionally omit price, rating, availability, and booking claims.
-
-Supporting artifacts: [focused research](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-location-research.md),
-[pre-implementation early mockup](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-live-hotel-search-mockup.html),
-[implementation/verification prompt](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md),
-[full verification evidence](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md), and
-[verification procedure](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/verification.md), plus the
-[professor-style final audit](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-final-audit.md).
-
-## 8. Submission Checklist and Scope Boundary
-
-- Research links, observed strengths/weaknesses, and adopted decisions: present.
-- Pre-implementation early mockup: present and explicitly dated in sequence.
-- FastAPI/Vue implementation with protected backend configuration: present.
-- Expected-versus-observed verification with live ZIPs and date: present.
-- Screen-recorded MP4, demo script, and exact recording procedure: present.
-- AI disclosure and evidence, including a real revised approach: present.
-- Assessed commit identifier: recorded in the Submission Record above.
-
-This assessed Part 1 work introduces no shortlist, database, authentication,
-or booking feature. The repository's pre-existing Part 2 implementation and
-its checkpoint were deliberately preserved under `AGENTS.md`; the historical
-report below remains only as an appendix and is not part of this Part 1 scope.
-
----
-
-# Appendix A — Preserved historical Part 2 report
-
-This appendix predates the current Assignment 2.1 Part 1 implementation. It is
-retained for repository continuity and is not submitted as new Part 1 work.
-
-## Repository and commit
-
-Repository URL: [https://github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
-
-Repository snapshot: [github.com/jakebutler22/Expedia-lite at the submitted checkpoint](https://github.com/jakebutler22/Expedia-lite/tree/8dea025e2b5fc1288899b4847368713158640ed2)
-
-Submitted Part 2 checkpoint: [`8dea025e2b5fc1288899b4847368713158640ed2`](https://github.com/jakebutler22/Expedia-lite/commit/8dea025e2b5fc1288899b4847368713158640ed2) (`Complete Part 2 report URL correction and report`). The immediately following documentation commit on `main` records this hash, and the annotated Git tag `part2-submission` points to this checkpoint. The Part 1 checkpoint remains intact at `77d101ad62bedad9d7dd82fd03b7cf242fbdb17c` under annotated tag `part1-submission`.
-
-The implementation was developed and reviewed on `part2-sqlite-crud`, followed by additive verification hardening on `part2-verification-hardening`. The hardening branch was merged into `main` with explicit merge commit `2b48ff307e6ad6af1573fea0dd006b6c2b153a5e` before the combined application was checked again on `main`. The one-line repository-link correction was then committed on `part2-report-url` and explicitly merged as `c87b7b250f2695891a37eb81ebbc761819a23d1c`.
-
-## Implementation
-
-Part 2 changes Expedia Lite from a read-only, per-request CSV search into a persistent booking application. All four supplied CSV files seed SQLite exactly once. A marker written only after the transactional import completes prevents later startups from replaying starter data, so deleted bookings stay deleted and user-created or cancelled bookings remain unchanged. The schema preserves the supplied hotel, trip, user, and booking text IDs; enforces trip-to-hotel and booking-to-user/trip foreign keys on every connection; and maintains a persistent booking-number sequence so deleted IDs are never reused.
-
-- The **Vue frontend** accepts a partial hotel name or city, preserves the original stay-results columns, loads demo travelers, creates a booking directly from a result row, displays joined booking history, retains cancelled rows with a clear status badge, and requires an in-page confirmation before permanent deletion. It sends the preferred `query` parameter and never reads CSV or SQLite files directly.
-- The **FastAPI layer** owns HTTP validation and JSON response models, supplies a SQLite connection per request, maps framework-free data errors to appropriate 400/404 responses, and exposes search, user, history, booking-create, booking-read, cancel-update, and delete endpoints. `/api/stays` prefers `query` while accepting `city` as a deprecated compatibility alias; both describe matching a hotel name or city.
-- The **backend persistence and rules modules** own schema creation, one-time CSV seeding, foreign-key enforcement, SQLite search and CRUD queries, transactional ID allocation, search normalization, SQL-pattern escaping, booking-ID formatting, and stay-price calculations. These data and calculation rules have no FastAPI dependency.
-
-After seeding, no request path reads a CSV file. Search uses one SQLite join and supports trimmed, case-insensitive partial hotel-name matching while retaining trimmed, case-insensitive exact city matching. Cancel and delete are intentionally different operations: cancel updates status and keeps the record; delete removes it permanently.
-
-## Verification
-
-Verification was performed on September 14–15, 2026.
-
-| Action | Expected result | Observed result |
-| --- | --- | --- |
-| Review every changed file in VS Code Source Control | No request path reads CSV, seeding is marker-gated rather than unconditional, and production booking IDs are not hardcoded. | Opened Source Control and loaded every changed path for file-by-file review. CSV imports and reads occur only in `backend/app/database.py`; `initialize_database` checks `seed_metadata` before `_seed_from_csv`; production IDs come from `booking_id_sequence` and `format_booking_id`. Literal booking IDs are confined to tests, seed data, and recorded verification evidence. |
-| Verify the Git checkpoint and merge history | Reviewed Part 2 work is developed on feature branches and merged into `main`; the combined application is checked on `main`; the Part 1 checkpoint remains an ancestor of `main` under `part1-submission`. | Part 2 work was reviewed on `part2-sqlite-crud`; verification hardening was committed and pushed on `part2-verification-hardening` at `04438e31af7a183d99be4d112eb8a472a32ffd3f`, then merged with `--no-ff` as `2b48ff307e6ad6af1573fea0dd006b6c2b153a5e`. The one-line report correction was committed and pushed on `part2-report-url` at `bbdfb210e3edb6bf49c03d3be37a07dce2827f2e`, then merged with `--no-ff` as `c87b7b250f2695891a37eb81ebbc761819a23d1c`. The backend suite and production build passed on that merged `main`; the complete automated and browser SmokeTest had already passed on combined `main` after hardening. `git merge-base --is-ancestor 77d101ad62bedad9d7dd82fd03b7cf242fbdb17c main` succeeded, and annotated tag `part1-submission` still resolves to that Part 1 commit. |
-| Run CHECK → TAKE ACTION → VERIFY for SQLite | Identify the project interpreter, verify `sqlite3`, avoid an unnecessary package installation, and prove file persistence. | CHECK used `/Users/jakebutler/Documents/ChatGPT/Expedia-lite/backend/.venv/bin/python`, Python 3.14.7, and SQLite 3.50.4; the standard-library import passed. TAKE ACTION explicitly skipped installation. VERIFY wrote `(1, 'SQLite persistence verified')` to a temporary database, closed and reopened it, read the same row, and removed the temporary file. |
-| Run the backend test suite on merged `main` | Fresh-database seeding, non-reseeding, foreign keys, both search parameter names, errors, persistent ID allocation, and the complete booking lifecycle pass. | `backend/.venv/bin/python -m pytest backend/tests` collected 26 tests; all 26 passed in 0.26 seconds after the report-URL merge. Two dependency deprecation warnings were reported. `Harbor` returned T001 and T009 through both preferred `query` and deprecated `city`. |
-| Build the Vue frontend on merged `main` | Vite produces a production build without errors. | `npm --prefix frontend run build` transformed 11 modules and completed in 166 milliseconds. |
-| Search by hotel name through Vue | Exact and partial hotel-name input returns the matching hotel's stays through the preferred `query` parameter. | Exact `Harbor Lantern Hotel` and partial `Harbor` each returned T001 and T009. |
-| Search by city through Vue | Part 1 city behavior remains correct. | `Boston` returned exactly T001, T002, T009, and T010. |
-| Search for a missing value through Vue | A clear no-results state appears without a results table. | `Miami` displayed “No hotel stays found for Miami. Try another hotel name or city.” and the search-results region contained no table. |
-| Create a booking through Vue | Booking a result for the selected traveler creates a new non-colliding ID and shows it in history. | Hardening created B009 for U006, proving deleted B008 was not reused; the merged-main rerun later created B011. Both appeared in history with joined hotel/trip details and dates. [Created-booking screenshot](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/screenshots/part2-created.jpg). |
-| Read booking history through Vue | The selected traveler's bookings show hotel, trip, check-in, check-out, booked-on date, and status; a traveler without bookings gets a clear message. | U006 history displayed every required field for retained bookings. After seeded B006 was deleted, U005 displayed “Demo Traveler 5 has no bookings.” |
-| Cancel a booking through Vue | Cancellation retains the row and changes its status to `cancelled`. | B009 in the hardening run and B011 on merged `main` stayed visible after cancellation with `cancelled` badges. [Cancelled-booking screenshot](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/screenshots/part2-cancelled.jpg). |
-| Delete a booking through Vue | Inline confirmation permanently removes the chosen row without deleting retained cancelled bookings. | Hardening deleted disposable B010; the merged-main rerun deleted disposable B012 and seeded B006 through **Delete permanently**. The deleted rows disappeared while cancelled B007, B009, and B011 remained. [Deleted-booking screenshot](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/screenshots/part2-deleted.jpg). |
-| Refresh the browser | Created, cancelled, and deleted state persists without a process restart. | On merged `main`, B011 remained present and `cancelled`; B012 and seeded B006 remained absent; U005 still had no bookings. |
-| Fully restart both backend and frontend | Created, cancelled, and deleted state survives a complete application restart, including deletion of a supplied booking. | Stopped only the two processes started for the test, restarted both against the same SQLite file, and reopened U005 and U006 history. B007, B009, and B011 remained `cancelled`; B008, B010, B012, and seeded B006 did not return. [Full-restart persistence screenshot](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/screenshots/part2-restart-persistence.jpg). |
-| Check starter rows after restart | Startup does not duplicate or restore seed records. | SQLite contained 8 hotels, 12 trips, 6 users, 8 bookings, and one seed marker. Starter bookings B001–B005 each occurred once; deleted starter B006 remained absent; retained additions were B007, B009, and B011; and the next booking number was 13. |
-| Inspect browser warnings, errors, and dialogs | No application console warning/error or JavaScript alert, confirm, or prompt dialog appears. | Browser inspection returned zero warning/error entries and no active JavaScript dialog. Source review found no calls to `alert`, `confirm`, or `prompt`. |
-| Inspect the recaptured browser evidence | Each full-page screenshot uses the complete frame without duplicated strips or clipped rows, and booking statuses remain legible. | All four JPEGs are 1280 pixels wide. The restart evidence shows the traveler selector, complete U006 booking history, B007's `CANCELLED` badge, and no B008 row in one frame. |
-
-## Project context and next steps
-
-- [Setup and run instructions](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/README.md)
-- [Project-specific agent instructions](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/AGENTS.md)
-- [Design pipeline](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/design-pipeline.md)
-- [Verification procedure and recorded observations](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/docs/verification.md)
-- [Selected SQLite-foundation prompt](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/prompts/03-part-2-sqlite-foundation.md)
-- [Selected SQLite/API prompt](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/prompts/04-part-2-sqlite-api.md)
-- [Selected Vue CRUD prompt](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/prompts/05-part-2-vue-crud.md)
-- [Selected verification prompt](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/prompts/06-part-2-verification.md)
-- [Current handoff](https://github.com/jakebutler22/Expedia-lite/blob/8dea025e2b5fc1288899b4847368713158640ed2/handoffs/current.md)
-
-Part 2's required local SQLite search and booking CRUD workflow is complete and hardened. Remaining limitations are appropriate to the classroom scope: demo travelers only, no authentication or authorization, no production deployment controls, no dedicated frontend lint command, and no automated Vue component/end-to-end suite. The next task is the next assigned feature or a separately approved expansion of automated frontend coverage.
-
----
-
-# Appendix B — Revised Assignment 2 Part 2: Business Intelligence with RAG and an LLM
-
-This is the revised Part 2 submission section. It preserves the assessed Part 1
-report and the historical Part 2 report above. The local hotel-storage
-foundation existed before this chatbot revision.
-
-## B1. Project access and reproducibility
-
-- Public repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite). Anonymous access was confirmed October 7, 2026.
-- Assessed implementation commit: [`e35c201ab36e83b814a678587646d19816bc3826`](https://github.com/jakebutler22/Expedia-lite/commit/e35c201ab36e83b814a678587646d19816bc3826)
-- Part 1 assessed commit: `de43dd9df5c7cc842e9693f29cd43cb85e43507a`
+- Public repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
+- Public branch: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
+- Assessed Part 2 commit: **TO BE RECORDED AFTER THE FINAL LIVE CHECK**
+- Screen-recorded demonstration: **PENDING THE FINAL LIVE PROVIDER RUN**
 - Submission file: `report.md` (this file)
+- Observation date for the final local/database checks: **October 8, 2026**
 
-The assessed commit contains the application, tests, fixed sample, research,
-mockup, evidence, prompts, and demo script. It excludes `backend/.env`, working
-databases/backups, `node_modules`, and build output. The local commits must be
-pushed before an instructor can retrieve this version; no push or publication
-is performed without authorization.
+This report is intentionally Part 2 first because it is the file submitted for
+the revised Part 2 assignment. The corrected Part 1 submission remains
+preserved at public commit
+[`de43dd9df5c7cc842e9693f29cd43cb85e43507a`](https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a),
+including its [Part 1 report](https://github.com/jakebutler22/Expedia-lite/blob/de43dd9df5c7cc842e9693f29cd43cb85e43507a/report.md)
+and [public MP4](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4).
 
-Start the app in two Mac Terminal windows:
+## 1. Project access, startup, and configuration
+
+Clone the public repository and start the backend from the repository root:
 
 ```bash
 cd "/Users/jakebutler/Documents/ChatGPT/Expedia-lite"
 backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --reload --port 8000
 ```
 
+Start Vue in a second Terminal window:
+
 ```bash
 cd "/Users/jakebutler/Documents/ChatGPT/Expedia-lite"
 npm --prefix frontend run dev
 ```
 
-Open `http://127.0.0.1:5173`; API documentation is at
-`http://127.0.0.1:8000/docs`. Create ignored `backend/.env` from
-`backend/.env.example` with only backend settings:
+Open `http://127.0.0.1:5173`; FastAPI documentation is at
+`http://127.0.0.1:8000/docs`. The actual SQLite database is
+`backend/data/expedia-lite.db`.
+
+Copy `backend/.env.example` to ignored `backend/.env` and provide only the
+backend settings:
 
 ```dotenv
 GEOAPIFY_API_KEY=<your Geoapify key>
 OPENROUTER_API_KEY=<your OpenRouter key>
-OPENROUTER_MODEL=<the exact class-approved free NVIDIA Nemotron model ID>
+OPENROUTER_MODEL=<the verified free NVIDIA Nemotron model ID>
 ```
 
-The exact class model ID was absent from supplied materials and was not guessed.
-No credential belongs in Vue, a `VITE_` variable, this report, the recording,
-or Git. Verified versions were Python 3.14.7, SQLite 3.50.4, FastAPI 0.141.1,
-Pydantic 2.13.5, HTTPX 0.28.1, Uvicorn 0.52.4, pytest 9.1.1, Node 24.12.0,
-npm 11.6.2, Vue 3.5.42, Leaflet 1.9.4, Vite 8.2.2, and Vue Vite plugin 6.0.8.
-No dependency was installed or upgraded during final verification.
+Neither provider key belongs in Vue, a `VITE_` value, Git, the report, or the
+recording. `.gitignore` excludes `.env` and runtime SQLite files while
+`backend/.env.example` remains trackable. Expedia Lite accepts only an explicit
+NVIDIA Nemotron `:free` model setting and has no silent paid or automatic
+fallback.
 
-## B2. Research notes and design decisions
+No dependency was added during revised Part 2. The existing `httpx` client,
+Python `sqlite3`, Vue, and approved `leaflet@1.9.4` were sufficient.
 
-The [focused research](docs/revised-part2-rag-research.md) records source-linked
-strengths, weaknesses, current capabilities/limits, and decisions. It cites the
-official [OpenRouter quickstart](https://openrouter.ai/docs/quickstart),
-[chat API](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request),
-[free variants](https://openrouter.ai/docs/guides/routing/model-variants/free),
-[pricing](https://openrouter.ai/pricing/),
-[Geoapify geocoding](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/),
-[Geoapify Places](https://apidocs.geoapify.com/docs/places/),
-[Leaflet](https://leafletjs.com/reference.html),
-[Python SQLite](https://docs.python.org/3/library/sqlite3.html), and
-[SQLite security](https://www.sqlite.org/security.html).
+## 2. Research notes and resulting decisions
 
-Useful patterns were a question beside structured hotel data, immediate loading
-feedback, visible evidence, connected chat/list/map selection, and explicit
-insufficient-data behavior. Weak patterns were ungrounded claims, unclear
-freshness, sending unrelated traveler/booking data, confusing simulated values
-with live inventory, guessing a model, and unconstrained generated SQL.
+The complete source-linked research is
+[docs/revised-part2-rag-research.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/revised-part2-rag-research.md).
+It was started October 7, 2026 before chatbot implementation and rechecked
+October 8 before final verification.
 
-The adopted design uses two non-streaming requests to one explicitly configured
-free Nemotron model. Request one proposes one SQL `SELECT` or
-`insufficient_data`. FastAPI—not the model—applies a single-statement check,
-deny-by-default SQLite authorizer, three-table allowlist, and work/result limits
-before execution. Request two receives the question, validated SQL, and exact
-bounded records. Vue displays the whole safe trace. Assignment 1 users, trips,
-bookings, and supplied hotel rows remain inaccessible; rates and room counts
-are always labeled simulated classroom data.
+Important sources and decisions:
 
-## B3. Early mockup
+- [OpenRouter quickstart](https://openrouter.ai/docs/quickstart),
+  [chat-completion API](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request),
+  [free model variants](https://openrouter.ai/docs/guides/routing/model-variants/free),
+  [models API](https://openrouter.ai/api/v1/models), and
+  [pricing](https://openrouter.ai/pricing/) support one backend-only REST
+  integration. A `:free` suffix is used only for a catalog entry that actually
+  lists it; no paid fallback is allowed. The October 8 catalog showed several
+  different free Nemotron entries, so the exact configured model must be
+  recorded rather than inferred from the word “Nemotron.”
+- [Python `sqlite3`](https://docs.python.org/3/library/sqlite3.html) and
+  [SQLite security guidance](https://www.sqlite.org/security.html) informed the
+  deny-by-default authorizer, compile check, and query/result limits. The model
+  never receives the database or a connection and cannot directly execute SQL.
+- [Geoapify Geocoding](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/)
+  and [Places](https://apidocs.geoapify.com/docs/places/) support the preserved
+  exact U.S. postcode confirmation and hard 5 km hotel search. Their location
+  facts do not prove real rooms, rates, availability, or booking status.
+- [Leaflet](https://leafletjs.com/reference.html) supports the retained
+  keyboard-usable map, marker events, bounds, popups, and attribution.
+- Booking.com property-question and trip-planner patterns and Expedia's
+  conversational trip-planning pattern support placing a concise question
+  near structured hotel results. Their weakness for this assignment is that a
+  fluent response can look authoritative without visible grounding.
 
-[Open the revised Part 2 early mockup](docs/revised-part2-chatbot-early-mockup.html).
-It was saved October 7, 2026 **before production chatbot implementation** and
-shows question, loading, answer, no-match, insufficient-data, and error states
-with the existing list/map context.
+Expedia Lite therefore shows the proposed SQL, backend validation decision,
+execution status, exact retrieved rows, whether request two was sent, and the
+grounded answer. It uses no embeddings, vector database, agent framework,
+conversation memory, payment, booking, or real inventory claims.
 
-The mockup assumed static application retrieval and one model request. A later
-benchmark required model-proposed SQL and two requests with validation/execution
-between them. Production therefore added proposed SQL, validation, execution,
-exact-record, and second-request evidence while retaining the original state
-design. This genuine revision is documented in the
-[research](docs/revised-part2-rag-research.md#requirement-driven-revision-after-the-early-mockup)
-and [AI evidence](prompts/09-revised-part2-final-verification.md).
+## 3. Early mockup
 
-## B4. Implemented architecture
+[Open the self-contained early chatbot mockup.](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/revised-part2-chatbot-early-mockup.html)
 
-`POST /api/hotel-insights` makes request one for strict JSON containing one
-`SELECT` or `insufficient_data`. `backend/app/safe_sql.py` rejects comments,
-semicolons, writes, multiple statements, administrative/extension work,
-unauthorized tables/functions, excess VM work, and oversized results. It
-compile-checks then executes under the authorizer with limits of 50 rows, 20
-columns, and 50,000 serialized bytes. Request two receives exact SQL and exact
-records and returns `answer`, `no_matches`, or `insufficient_data`. Rejected SQL
-is never executed and never reaches request two; successful empty retrieval
-does reach request two. Provider errors are stage-specific and sanitized.
+The mockup was created **before revised Part 2 production implementation**. It
+shows the natural-language question, loading, answer, no-match,
+insufficient-data, and error states beside the existing saved hotel/list/map
+workflow.
 
-Every ZIP search still reads `GET /api/saved-hotels?zip=<ZIP>` first. A local
-hit shows **Saved locally** and prohibits the Part 1 endpoint; only successful
-empty local data falls back to `GET /api/hotels?zip=<ZIP>` and shows **API
-results**; a local failure stops. Add/remove, committed-value rereads, leading
-zero ZIPs, stored coordinates, October 10–14 simulated values, and list/map
-synchronization remain intact. Part 1 still confirms the exact U.S. postcode
-and uses its returned point for a hard 5 km Geoapify Places query.
+The early design assumed application-owned static SQL and one model request. A
+later explicit benchmark required a model-proposed query and two model requests
+with checked retrieval between them. Production was revised to expose proposed
+SQL, validation, bounded execution, exact records, and second-request status.
+This is a real documented design revision, not a retrospective fabricated
+failure.
 
-## B5. Screen-recorded demonstration
+## 4. Implementation and MVC responsibilities
 
-- Accessible video URL: **PENDING — not recorded/uploaded**
-- Local recording file: **PENDING**
-- Genuine live model ID/date: **PENDING configuration and live run**
-- DB Browser **Write Changes** checkpoint: **PENDING user action**
+### Local-first hotel storage
 
-The [recording handoff](docs/revised-part2-demo-script.md) gives exact,
-beginner-friendly Mac Terminal, DB Browser, browser, and recording steps. It
-covers all seven required items: foundation; complete live two-request trace;
-database comparison; no-match/insufficient; labeled rejected-query fixture;
-manual rate/room edit and reread; persistence, scoped removal, and preservation.
-No fixture or stub is claimed as live-provider evidence.
+Every explicit ZIP search first calls
+`GET /api/saved-hotels?zip=<five-digit ZIP>` with browser caching disabled.
+A nonempty local success displays **Saved locally**, stored coordinates, and
+the five current committed nightly records; it makes no Part 1 hotel-search
+request. Only a successful empty local response falls back to
+`GET /api/hotels?zip=<ZIP>` and displays **API results**. A local network, HTTP,
+or invalid-response failure remains an error and never becomes an empty success.
 
-## B6. Verification record
+**Add to Local** stores the real provider identity, available hotel details,
+coordinates, and searched ZIP. Add is disabled while pending and whenever the
+persisted data says the hotel is already saved. **Remove from Local** appears
+only for saved hotels. Saves are idempotent and do not overwrite later manual
+night edits. Requests open a fresh SQLite connection, so each repeated search
+reads current committed values rather than localStorage, an in-memory result,
+or stale server/browser cache.
 
-The full chronology is in the
-[October 7 evidence log](docs/revised-part2-evidence-log-2026-10-07.md). The
-[fixed JSON sample](backend/tests/fixtures/revised_part2_fixed_sample.json) is
-labeled fixture-only and independent of changing live hotel counts.
+The normalized tables are separate from the supplied Assignment 1 `hotels`
+table:
 
-Repeat focused checks from the repository root:
+- `saved_hotels`: unique provider ID, name, address, latitude, longitude;
+- `saved_hotel_zips`: unique hotel/leading-zero ZIP association;
+- `demo_hotel_nights`: unique hotel/date rows with database defaults of 10,000
+  cents and 20 rooms for October 10–14, 2026.
 
-```bash
-cd backend
-.venv/bin/python -m pytest -q tests/test_hotel_insights.py
-.venv/bin/python scripts/revised_part2_fixture_demo.py
-```
+The nightly values are always labeled **simulated classroom data**. Integer
+cents are formatted accurately (`10000` → `$100.00`), and valid zeroes are not
+replaced with defaults.
 
-Run all checks from the root with:
+### Two-request RAG workflow
+
+`POST /api/hotel-insights` accepts one saved-hotel question up to 500
+characters.
+
+1. FastAPI sends the question and the three-table schema/rules to the one
+   configured model. The model may propose exactly one `SELECT` or return
+   `insufficient_data`.
+2. FastAPI, not the model, validates the proposal. It rejects comments,
+   semicolons, multiple statements, writes, administrative/extension work,
+   unauthorized tables/functions, excess VM work, and oversized results. A
+   SQLite authorizer allows reads only from `saved_hotels`,
+   `saved_hotel_zips`, and `demo_hotel_nights`.
+3. FastAPI executes only a passed query with limits of 50 rows, 20 columns,
+   50,000 serialized bytes, and bounded virtual-machine work.
+4. FastAPI sends the original question, validated SQL, and exact retrieved JSON
+   records to the same model. An empty successful retrieval still reaches this
+   second request so it can return `no_matches`.
+5. The backend and frontend reject contradictions such as an `answer` with
+   zero records, `no_matches` with nonempty records, a changed model ID, or
+   trace flags that do not describe a valid pipeline state.
+
+The user sees distinct `answer`, `no_matches`, `insufficient_data`,
+`rejected_query`, loading, and failed-request states. All provider errors are
+stage-specific but sanitized.
+
+### MVC boundary
+
+- **Model/data services:** SQLite schema, one-time CSV seed, saved-hotel access,
+  safe SQL rules, Geoapify services, and OpenRouter client live in
+  `backend/app/` without Vue responsibility.
+- **Controller/API:** FastAPI validates HTTP input, coordinates services,
+  normalizes responses, and maps errors without exposing secrets.
+- **View:** Vue owns forms, status presentation, loading/error states, formatted
+  simulated values, selection, and synchronized Leaflet list/map interaction.
+
+The four supplied CSVs remain immutable one-time seed inputs. After seeding,
+SQLite is the source of truth; no request path rereads a CSV. Existing search,
+booking creation/history, cancellation, and permanent deletion remain intact,
+and cancellation is still different from deletion.
+
+## 5. Verification evidence
+
+The detailed chronology and complete expected-versus-observed evidence are in
+[docs/revised-part2-evidence-log-2026-10-07.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/revised-part2-evidence-log-2026-10-07.md).
+The repeatable sample is
+[backend/tests/fixtures/revised_part2_fixed_sample.json](https://github.com/jakebutler22/Expedia-lite/blob/main/backend/tests/fixtures/revised_part2_fixed_sample.json)
+and is explicitly labeled fixture-only.
+
+Run all checks from the repository root:
 
 ```bash
 backend/.venv/bin/python -m pytest -q backend/tests
 npm --prefix frontend test
 npm --prefix frontend run build
+backend/.venv/bin/python backend/scripts/revised_part2_fixture_demo.py
 ```
 
-### Automated and fixed-fixture evidence
+### Final automated and fixed-sample results
 
-| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
+| Input/action | Expected result | Observed result | Pass/fail | Correction or limitation |
 | --- | --- | --- | --- | --- |
-| Full backend suite | Existing and revised behavior passes using isolated mutation DBs. | **104 passed**; two dependency deprecation warnings only. | E13–E14; `backend/tests/` | No dependency changes. |
-| Frontend tests/build | Contracts pass and Vue compiles. | **21 passed**; Vite transformed 15 modules and built. | E14; `frontend/tests/` | No new E2E package. |
-| Fixed ZIP `02108`, Oct. 10 check-in/Oct. 13 checkout, two rooms | Request one → validation/execution → request two; exact rows; checkout excluded; integer cents. | Eligible Inn record contained Oct. 10–12, minimum 2 rooms, and **67,000 cents ($670.00)**. Oct. 13 checkout data was excluded. | Fixed JSON; focused ordering/exact-record test; E14 browser observation | Two-response stub, not live provider. |
-| Duplicate `02108`/`02109` associations | Do not duplicate nights or inflate total. | One correct qualifying record and total. | Fixed JSON; focused tests | Fixture. |
-| Missing middle night, sold-out included night, insufficient rooms | Hotel does not qualify. | Each was excluded. | Fixed JSON; focused tests | Fixture. |
-| Successful empty SQL result | Request two still runs and returns no matches. | Empty exact records reached request two; `no_matches`. | `test_successful_empty_query_still_calls_second_model` | Simulated provider. |
-| November 2026 question | Insufficient coverage; no SQL/second request. | `insufficient_data`; validation not run; execution/second request false. | Focused insufficient test | Simulated provider. |
-| `DELETE`, multiple statements, unauthorized table, `PRAGMA`, `ATTACH`, extension | Reject before execution/second request; data unchanged. | All rejected; execution false; second calls zero; protected rows identical. | Parameterized tests and fixture demo; E13 | Fixture-only rejection demo. |
-| Exceed work/row/column/byte limit | Abort without oversized model context. | All limit tests used the safe failure path. | Focused tests; E13 | Isolated artificial data. |
-| Malformed stage one/two and simulated 429 | No unsafe execution; stage-specific error. | First-stage failures made no second call; second-stage failures stayed answer-generation errors. | Focused tests; E13 | 429 simulated; no quota consumed. |
-| Credential boundary | Keys remain backend-only and absent from responses. | `.env` ignored; safe example placeholders; no Vue provider key/request; safe health/errors. | E11, `.gitignore` | Real keys absent from evidence. |
-| Actual Uvicorn dependency cleanup | Request SQLite connection closes safely. | First run exposed cross-thread `sqlite3.ProgrammingError`; connection setup/regression test fixed it; real request paths then returned 200. | E14; `test_database.py` | Genuine failure fixed and rerun. |
+| Full backend suite | Existing booking, Part 1, local storage, safe SQL, and RAG behavior pass in isolated databases. | **106/106 passed** in 0.50 seconds; the focused RAG subset was **26/26**. | Pass | Two dependency deprecation warnings do not affect behavior; no package change was made. |
+| Frontend tests and production build | Request contracts, formatting, failures, and build pass. | **23/23 tests passed**; Vite transformed 15 modules and built production output in 123 ms. | Pass | No new test dependency was needed. |
+| Fixed `02108`, Oct. 10 check-in/Oct. 13 checkout, two rooms | Request one → checked SQL → exact rows → request two; checkout excluded; integer-cent total. | Eligible Inn had three included nights, minimum two rooms, and **67,000 cents ($670.00)**; Oct. 13 checkout data was excluded. | Pass | Deterministic fixture, not a live provider result. |
+| Duplicate ZIP associations; missing middle night; sold-out night; insufficient rooms | No duplicate totals; incomplete/ineligible hotels excluded. | Each rule produced the expected exact record set and total. | Pass | Fixture data. |
+| Successful empty retrieval | Request two runs and returns `no_matches`. | Exact empty list reached request two and returned `no_matches`. | Pass | Simulated provider response. |
+| November 2026 request | No SQL or second request because stored coverage is only Oct. 10–14. | `insufficient_data`; validation not run; execution and request two were false. | Pass | Simulated provider response. |
+| `DELETE`, multiple statements, unauthorized table, `PRAGMA`, `ATTACH`, extension | Reject before execution/request two; all protected data unchanged. | All were rejected. The fixture demo reported execution false, second-request calls zero, protected data unchanged, and temporary DB removed. | Pass | Labeled fixture; no live quota used. |
+| Malformed model payloads, contradictory status/rows, invalid trace, simulated 429 | Honest stage-specific failure and no unsafe success state. | All invalid responses followed the expected failure path. New tests reject answer/no-match and trace contradictions on both backend and frontend. | Pass | 429 is simulated to avoid consuming quota. |
+| Credential boundary | `.env` ignored; key absent from Vue, build, health, and errors. | Ignore checks and response/source tests passed; safe example contains blanks only. | Pass | Real secrets are intentionally absent from evidence. |
 
-### Genuine browser/live-service evidence
+### October 8 real application and database observations
 
-| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
+| Input/action | Expected result | Observed result | Pass/fail | Correction made |
 | --- | --- | --- | --- | --- |
-| Search `16802` on October 7, 2026 with empty isolated local data | Local GET first; empty success alone falls back; API list/map agree. | Log showed saved lookup then `GET /api/hotels?zip=16802`; both showed **API results**. | [Local verification](docs/local-hotel-storage-verification-2026-10-06.md#october-7-re-verification) | Live Geoapify count intentionally not fixed. |
-| Repeat `16802` after save | Fresh local values; no Part 1 request. | After refresh only local GET occurred; **Saved locally**, nights, and stored marker shown. | Same evidence | Isolated DB. |
-| Commit Oct. 10 = 12,345 cents/zero rooms and search | Reread committed values including zero. | UI showed `$123.45` and `0` without restart. | Same evidence | DB Browser click itself still pending. |
-| Local lookup failure | Clear error, no fallback. | **Saved hotel lookup unavailable**; fallback not requested. | Same evidence | Backend restarted afterward. |
-| List/marker keyboard selection | Same identity in both views; attribution visible. | List selected marker; marker Enter selected list row. | Same evidence | Genuine browser observation. |
-| Final fixed-sample UI | Complete trace and exact answer visible in production app. | Vue/FastAPI showed proposed SQL, passed validation, execution, exact Eligible Inn row, request two, and $670 answer; `02109` local map/nights/attribution also appeared. | E14 | Provider stages were labeled stub. |
-| Genuine configured OpenRouter success | Two real calls and actual model ID/date captured. | **PENDING:** key/model absent; no model guessed. | E15 | User configuration required. |
+| Search leading-zero `02108` with empty local tables | Local lookup first; empty success falls back to the preserved exact-postcode/5 km API route. | Request log showed `/api/saved-hotels?zip=02108` then `/api/hotels?zip=02108`. Vue showed **API results**, 5 km, map attribution, and 19 live hotels on **October 8, 2026**. | Pass | Result count is an observation, never a fixed assertion. |
+| Add Beacon Hill Hotel and Bistro and Churchill at Boston View | Provider identities/details/coordinates, searched ZIP, and five nights persist; Add disables. | Both saved with five Oct. 10–14 rows; Add disabled and Remove appeared. | Pass | None. |
+| Repeat `02108` | **Saved locally**; no Part 1 hotel request; exact stored coordinates and list/map dataset. | Vue showed two saved hotels. The new request-log segment contained only `/api/saved-hotels?zip=02108`. | Pass | None. |
+| DB Browser edit Beacon Hill Oct. 10 from 10,000 cents/20 rooms to 15,750/7 and click **Write Changes** | Commit to the active database and reread without restart. | DB Browser reported one row affected; **Write Changes** was clicked and disabled after commit. Repeated Vue search showed **$157.50** and **7**. | Pass | Initial direct editor setting did not populate the native control; normal paste was used and the successful run was visibly verified. |
+| Replay Beacon Hill's actual save payload | Exactly five rows remain and the edit is not overwritten. | HTTP 201 returned five nights; SQL showed `night_count=5`, `edited_row_preserved=1`. | Pass | None. |
+| Remove only Churchill; repeat search | Churchill disappears with dependent rows; Beacon Hill remains with edited data. | DELETE returned HTTP 200; Vue then showed one saved hotel, Beacon Hill, `$157.50`, and `7`. | Pass | Browser reread was genuine; frontend request tests separately cover the Remove control. |
+| Stop/restart only this run's backend and frontend; press Enter on ZIP input | SQLite persistence and keyboard submission survive a full restart. | After restart, Enter returned **Saved locally**, Beacon Hill, `$157.50`, and `7`. | Pass | None. |
+| Compare all protected Assignment 1 tables with the pre-checkpoint backup | No original record changes; healthy database. | Bidirectional comparisons showed zero differing rows for `hotels`, `users`, `trips`, `bookings`, `booking_id_sequence`, and `seed_metadata`; integrity `ok`; no foreign-key violations. | Pass | None. |
+| Ask while provider configuration is absent; inspect console | Honest failure leaves other features usable; no application console errors. | Vue showed **Saved hotel insights unavailable** with the configuration message and preserved hotel features; warning/error log was empty. | Pass | This is failure-state evidence, not the required live success. |
 
-### Manual evidence still pending
+### Live provider result
 
-| Input/action | Expected result | Observed result | Evidence reference | Corrections or limitations |
-| --- | --- | --- | --- | --- |
-| DB Browser set 15,750 cents/7 rooms, click **Write Changes**, repeat search/question | Both reread `$157.50` and `7` without restart. | **PENDING manual course checkpoint.** | Demo step 6 | DB Browser not detected or installed. |
-| Record/upload full demo | Instructor can watch all steps without access request. | **PENDING.** | B5/demo script | User records/uploads/tests link. |
+The genuine two-request OpenRouter row will be completed only after the ignored
+local key and exact class model setting are present. No fixture model name will
+be represented as live evidence.
 
-The canonical DB stayed byte-identical during isolated RAG verification:
-SHA-256 `c43f08bd015ddb73b498d0cff83b3e49ff251fbea4e485ceee0a7b38e5a75622`;
-integrity was `ok`, foreign-key check empty, and every original Assignment 1
-row matched the verified baseline in both directions—not only by count.
+## 6. Screen-recorded demonstration
 
-## B7. AI disclosure and evidence log
+- Public MP4: **PENDING THE GENUINE LIVE PROVIDER RUN**
+- Local repository path: `docs/videos/expedia-lite-revised-part2-demo.mp4`
+- Actual model/date: **PENDING**
+
+The exact seven-part walkthrough is
+[docs/revised-part2-demo-script.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/revised-part2-demo-script.md).
+The final recording will show:
+
+1. leading-zero ZIP, local-first request order, API/local labels, five nights,
+   map/list synchronization, and attribution;
+2. one successful real question through model request one, proposed SQL,
+   validation/execution, exact records, model request two, and answer;
+3. the answer compared with actual SQLite rows;
+4. distinct no-match and insufficient-data cases;
+5. the labeled rejected-query fixture proving no execution or second call;
+6. DB Browser **Write Changes**, frontend reread, and chatbot reread; and
+7. restart persistence, scoped removal, and preserved Assignment 1 data.
+
+## 7. AI disclosure and evidence log
 
 | Tool/model actually used | Purpose and boundary |
 | --- | --- |
-| OpenAI Codex, GPT-5-based coding agent as identified by the development environment | Audit, research synthesis, implementation, tests, browser automation, corrections, and docs; outputs were verified. |
-| Codex web retrieval with the same agent | Official-source research and anonymous GitHub access check; not application hotel data. |
-| Process-local two-response stub | Deterministic verification code, **not AI** and not live OpenRouter. |
-| OpenRouter/NVIDIA Nemotron | **Not used live because configuration is absent.** No model identity is fabricated. |
+| OpenAI Codex, GPT-5-based coding agent identified by the development environment | Repository audit, research synthesis, implementation, tests, browser/DB Browser verification, corrections, documentation, Git, and recording preparation. Every claim was checked against code, tests, database state, or the running UI. |
+| Codex web retrieval with the same agent | Official OpenRouter/Geoapify/library research and public-link checks; it was not hotel application data. |
+| Process-local two-response stub | Deterministic testing only; it is **not AI** and is never claimed as live OpenRouter. |
+| OpenRouter NVIDIA Nemotron | The exact real model and live use will be recorded only after the configured provider genuinely returns both responses. |
 
-Selected evidence is in [prompt 08](prompts/08-revised-part2-rag.md) and
-[prompt 09](prompts/09-revised-part2-final-verification.md). Key excerpts were
-“request one must propose SQL,” “validated SQL execution between them,” “exact
-retrieved records passed to request two,” “never run destructive tests against
-the real assignment database,” and “never mark pending evidence complete.”
-They drove the safe-SQL module, two-stage service, isolated sample, visible
-trace, and pending labels.
+Selected prompt/evidence excerpts are public in
+[prompts/08-revised-part2-rag.md](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/08-revised-part2-rag.md)
+and
+[prompts/09-revised-part2-final-verification.md](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/09-revised-part2-final-verification.md).
+They connect requirements to the two-request service, safe-SQL boundary, fixed
+sample, visible trace, and expected-versus-observed checks.
 
-Two real revisions are documented. The early one-request/static-query design
-was replaced when it failed the later two-request benchmark (research revision
-and E12). Then an actual Uvicorn run exposed cross-thread SQLite cleanup; the
-connection configuration and regression test were corrected before complete
-suites and real endpoints passed (E14). Neither failure was invented.
+Three genuine revisions are retained:
 
-## B8. Access gaps, remaining actions, and scope
+1. The early one-request/static-query design failed the later explicit
+   two-request/generated-SQL benchmark and was replaced.
+2. A real Uvicorn run exposed cross-thread SQLite dependency cleanup; connection
+   setup and a regression test were corrected before endpoint reruns passed.
+3. The first DB Browser editor attempt did not actually enter the SQL. The
+   unchanged database exposed the failure; normal paste, execution, **Write
+   Changes**, a direct database read, Vue reread, and restart rerun then passed.
 
-The repository, Part 1 assessed commit, Part 2 implementation commit, report,
-and Part 1 demonstration are publicly available on `main`; anonymous access to
-the commit pages was confirmed October 8, 2026. Still pending for revised Part
-2 only: private OpenRouter key and exact class model for one genuine
-two-request run, the recorded DB Browser **Write Changes** checkpoint, and the
-Part 2 video URL. Credentials must stay out of all evidence.
+## 8. Security, scope, and submission checklist
 
-No vector database, embeddings, agent framework, deployment, payment, real
-inventory/booking, silent paid fallback, or unrelated feature was added.
-Protected Part 1 behavior/checkpoints, original Assignment 1 records,
-local-first save/remove, and cancellation-versus-deletion semantics remain.
+- Public repository, branch, and final assessed commit: commit still pending.
+- Research with links, useful/problematic observations, limits, and decisions:
+  complete.
+- Early pre-implementation mockup with subsequent revision explained:
+  complete.
+- Working local-storage foundation and full two-request RAG implementation:
+  complete.
+- Expected-versus-observed evidence, fixed JSON, live ZIP/date, DB Browser
+  **Write Changes**, restart, and preservation checks: complete except for the
+  genuine live-provider row.
+- Public screen recording with no credential exposure: pending live provider.
+- AI disclosure with models, prompts, verification, and genuine revised/failed
+  approaches: complete; live model identity pending actual use.
+- `.env` ignored, keys backend-only, safe example committed: complete.
+- No vector database, unrelated framework, paid fallback, real inventory,
+  booking claim, deployment, or feature creep was introduced.
+
+The only incomplete submission inputs are the private OpenRouter key, exact
+class model setting, genuine live two-call result, resulting video, and the
+final assessed commit/public-link verification. They are deliberately marked
+pending rather than fabricated.

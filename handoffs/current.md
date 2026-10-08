@@ -1,8 +1,9 @@
 # Current handoff
 
 - **Revised Part 2 status:** The saved-hotel RAG implementation, research,
-  pre-implementation mockup, evidence log, demo script, backend tests, frontend
-  request tests, and isolated real-browser smoke pass are complete. Request one
+  pre-implementation mockup, Part-2-first report, evidence log, demo script,
+  backend tests, frontend request tests, and real browser/database passes are
+  complete. Request one
   proposes one SQL `SELECT` or insufficient-data outcome. A deny-by-default
   SQLite authorizer, table/function allowlists, compile check, and work/result
   limits run before execution. Request two receives the exact validated SQL and
@@ -68,8 +69,10 @@
 - **Dependencies:** The approved exact `leaflet@1.9.4` was already present and
   verified. All backend packages were also present. No dependency was added or
   installed during implementation.
-- **Checks:** The final full **104-test** backend suite, **21** dependency-free frontend
-  request/formatting checks, and production frontend build pass. Isolated
+- **Checks:** After response-consistency hardening, the full **106-test**
+  backend suite, **26-test** focused RAG subset, **23** dependency-free frontend
+  request/formatting checks, production Vite build, and rejected-query fixture
+  pass. Isolated
   local-hotel tests cover schema enforcement, fixed dates/defaults, leading-zero
   ZIPs, idempotence, manual-edit preservation, atomic rollback, scoped delete,
   fresh committed-value reads, startup preservation, and safe failures. Live
@@ -128,9 +131,17 @@
   deployment controls, dedicated frontend linter, or automated Vue
   component/end-to-end suite. The frontend request orchestration does have a
   dependency-free Node test suite.
-- **Manual benchmark handoff:** The canonical local-storage tables are empty,
-  the real OpenRouter key/model are not configured, and the October 7 audit
-  could not detect DB Browser for SQLite. The genuine two-request provider run,
-  DB Browser **Write Changes** checkpoint, recording, upload, and video URL are
-  intentionally pending. The exact combined walkthrough is
+- **October 8 canonical checkpoint:** The real application saved Beacon Hill
+  Hotel and Bistro and Churchill at Boston View for `02108`. DB Browser for
+  SQLite 3.13.1 opened the canonical database, committed Beacon Hill's
+  `2026-10-10` values from 10,000 cents/20 rooms to 15,750 cents/7 rooms with
+  **Write Changes**, and Vue reread `$157.50`/`7` without restart and after a
+  full backend/frontend restart. Replaying the original save kept five nights
+  and preserved the edit. Removing Churchill left Beacon Hill intact. The
+  local-hit request log contained only `/api/saved-hotels`; all protected
+  Assignment 1 tables were byte-for-row identical to the pre-checkpoint backup.
+- **Remaining handoff:** The canonical database retains Beacon Hill as the live
+  RAG comparison row. The real OpenRouter key/model are not configured, so the
+  genuine two-request provider run, final recording, public video URL, assessed
+  commit, push, and anonymous-link checks are pending. The exact walkthrough is
   `docs/revised-part2-demo-script.md`. No app or dependency was installed.

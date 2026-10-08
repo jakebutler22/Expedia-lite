@@ -267,3 +267,38 @@ video capture remain **pending**. The fixture model label
 course model. Official OpenRouter pages still showed multiple distinct free
 Nemotron entries, so no slug was guessed and no paid/automatic fallback was
 used.
+
+## E16 — October 8 canonical database and browser checkpoint
+
+This verification used the actual project database and the running production
+FastAPI/Vue code, not the fixed fixture. Before mutation, SQLite's online
+backup command created the ignored recovery copy
+`backend/data/backups/expedia-lite-pre-final-part2-2026-10-08.db`. Its SHA-256
+was `5fbc9303ad49f9b452aeecf20471de95db2d138645c73a21e115fd715b676166`, and
+`PRAGMA integrity_check` returned `ok`.
+
+| Input/action | Expected result | Observed result | Pass/fail | Correction made |
+| --- | --- | --- | --- | --- |
+| Search leading-zero ZIP `02108` on October 8, 2026 with no saved rows | `GET /api/saved-hotels?zip=02108` succeeds empty, then and only then `GET /api/hotels?zip=02108` returns current API results. | Uvicorn logged those two requests in that order. Vue displayed **API results**, a 5 km label, 19 live results at observation time, synchronized numbered rows/markers, and visible Leaflet/OpenStreetMap attribution. | Pass | None; live counts are not fixed expectations. |
+| Add Beacon Hill Hotel and Bistro and Churchill at Boston View | Each persisted provider hotel gets one `02108` association and exactly five October 10–14 nightly rows; Add disables and Remove appears. | Both live provider identities, names, addresses, and coordinates were saved. Vue immediately showed five `$100.00` / `20` simulated classroom rows for each, disabled Add, and offered Remove. | Pass | None. |
+| Repeat `02108` after the two saves | A local hit displays **Saved locally**, rereads SQLite, and prohibits the Part 1 hotel endpoint. | Vue showed two saved hotels. The new Uvicorn log segment contained only `GET /api/saved-hotels?zip=02108`; no `/api/hotels` request followed. | Pass | None. |
+| In DB Browser for SQLite, edit Beacon Hill Hotel and Bistro, `2026-10-10`, from 10,000 cents/20 rooms to 15,750 cents/7 rooms and click **Write Changes** | The change commits to the same database used by FastAPI. | DB Browser opened `/Users/jakebutler/Documents/ChatGPT/Expedia-lite/backend/data/expedia-lite.db`; its SQL result reported one row affected. **Write Changes** became enabled, was clicked, and returned to disabled. A separate SQLite read showed `15750` and `7`. | Pass | The first attempted editor value was not inserted because the native text area ignored direct value setting. The SQL editor was refocused and populated using normal paste, then execution and **Write Changes** were visibly rerun successfully. |
+| Repeat the same `02108` search without restarting | Current committed values appear; no hardcoded defaults or stale browser/server cache. | Vue displayed Beacon Hill's same October 10 row as **$157.50** and **7**, while the other four nights remained `$100.00` and `20`. | Pass | None. |
+| Replay Beacon Hill's actual `POST /api/saved-hotels` provider payload | The save is idempotent: five rows remain and the manual edit is not overwritten. | HTTP 201 returned the existing hotel with five nights; SQL reported `night_count = 5` and `edited_row_preserved = 1`. | Pass | None. |
+| Delete Churchill through `DELETE /api/saved-hotels/{place_id}`, then repeat the ZIP search | Only Churchill and its dependent rows disappear; Beacon Hill, its map marker, and edited values remain. | The route returned HTTP 200 with `deleted: true`. Vue then showed **1 saved for this ZIP**, Beacon Hill only, with `$157.50` and `7`. | Pass | The deletion was an API-driven mutation plus genuine browser reread; the separate frontend tests cover the Remove button's exact request contract and failure handling. |
+| Fully stop and restart only the FastAPI and Vite processes started for this run; search by pressing Enter | The saved hotel and committed edit survive both process restarts; keyboard search works. | After both restarts, Enter submitted `02108`; Vue again showed **Saved locally**, Beacon Hill, `$157.50`, and `7`. | Pass | None. |
+| Compare protected Assignment 1 tables with the pre-checkpoint backup | Local-hotel work does not change `hotels`, `users`, `trips`, `bookings`, `booking_id_sequence`, or `seed_metadata`; database remains healthy. | Bidirectional `EXCEPT` comparisons returned zero differing rows for all six tables. Integrity was `ok`; foreign-key check returned no rows. | Pass | None. |
+| Return an `answer` for empty records or `no_matches` for nonempty records; supply contradictory trace flags | Backend and frontend reject internally inconsistent model/API output as an answer-generation/invalid-response failure. | New regression tests passed for both contradictions and for invalid trace state. Focused result: 26 backend tests and 23 frontend tests passed. | Pass | Backend outcome/record consistency and frontend status/trace invariants were added before this checkpoint. |
+| Ask a saved-hotel question while OpenRouter configuration is absent | Show an honest provider failure without disturbing hotel search/local data. | Vue displayed **Saved hotel insights unavailable**, “OpenRouter insights service is not configured,” and “The hotel search and local-storage features remain available.” | Pass | This is the real unconfigured-service state, not the required live success. |
+| Inspect browser console after the real search, local-storage, restart, and provider-failure checks | No application warning or error entries. | Browser log inspection returned an empty list for warning/error levels. | Pass | None. |
+
+The genuine provider key and exact class model setting are still the only
+inputs unavailable to this audit. The live two-request evidence and final
+recording cannot be represented as complete until those ignored local settings
+exist and the configured model is verified as a free catalog entry.
+
+The complete post-correction check then passed: **106 backend tests**, **23
+frontend tests**, the Vite production build with 15 modules transformed, and
+the labeled rejected-query fixture. The fixture again reported execution
+false, zero second-model calls, protected data unchanged, and temporary
+database removal. No dependency was installed or upgraded.
