@@ -57,5 +57,7 @@ walkthrough above, then stop from the menu-bar recording control. Save the file
 as `part1-live-hotel-search-demo.mov`. Do not include `backend/.env`, terminal
 environment output, or any credential-bearing screen in the recording.
 
-The repository's dated, non-video demonstration evidence is
+The completed recording is
+[`docs/videos/expedia-lite-part1-demo.mp4`](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4).
+The repository's dated expected-versus-observed evidence remains
 [part1-verification-2026-09-29.md](part1-verification-2026-09-29.md).

@@ -31,6 +31,25 @@ evidence, `AGENTS.md`, and `report.md`.
 | Report completeness | The report contains submission metadata, research, mockup, decisions, implementation, verification, demo, AI disclosure, scope boundary, and submission checklist. | Pass after final documentation update |
 | Scope/no feature creep | No new shortlist, database, authentication, or booking feature was added. Pre-existing Part 2 code remains operational and is explicitly outside the assessed Part 1 scope. | Pass |
 
+## Regrade access and recording verification
+
+Rechecked October 8, 2026 after instructor feedback about inaccessible evidence:
+
+- the assessed Part 1 commit
+  [`de43dd9df5c7cc842e9693f29cd43cb85e43507a`](https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a)
+  exists publicly and is an ancestor of public `origin/main`;
+- the standard MP4 at
+  [`docs/videos/expedia-lite-part1-demo.mp4`](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
+  is 72 seconds and was visually sampled at the ready, success, synchronized
+  selection, invalid, unresolved, loading, no-results, and final-success
+  points;
+- all 104 backend tests and all 21 frontend tests passed, the Vite production
+  build passed, and the live browser console contained no warning/error entry;
+- `backend/.env` remains ignored and untracked; and
+- `report.md` and `docs/part1-regrade-handoff.md` contain direct public links
+  for the repository, assessed commit, recording, research, mockup,
+  verification, final audit, and AI evidence.
+
 ## Final automated and application checks
 
 - Backend: 68 tests passed; two dependency deprecation warnings only.

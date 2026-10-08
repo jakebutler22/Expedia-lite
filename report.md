@@ -8,8 +8,11 @@ recorded **before production implementation of the live hotel search and map**.
 ## Submission Record
 
 - Repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
-- Assessed Part 1 commit: `de43dd9df5c7cc842e9693f29cd43cb85e43507a`
+- Public assessed Part 1 commit: [`de43dd9df5c7cc842e9693f29cd43cb85e43507a`](https://github.com/jakebutler22/Expedia-lite/commit/de43dd9df5c7cc842e9693f29cd43cb85e43507a)
+- Public branch containing the Part 1 code: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
+- Screen-recorded demo: [Expedia Lite Part 1 demo (MP4)](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
 - Submission document: `report.md` (this file)
+- Regrade handoff: [docs/part1-regrade-handoff.md](docs/part1-regrade-handoff.md)
 - Final audit: [docs/part1-final-audit.md](docs/part1-final-audit.md)
 - Demo procedure: [docs/part1-demo-script.md](docs/part1-demo-script.md)
 - Dated verification: [docs/part1-verification-2026-09-29.md](docs/part1-verification-2026-09-29.md)
@@ -171,10 +174,14 @@ successful rerun; it is not a fabricated failure added after the fact.
 
 ## 7. Demo
 
-The production-ready [Part 1 demo script](docs/part1-demo-script.md) provides a
-three-to-four-minute walkthrough and the exact safe macOS recording step if a
-video file is requested. The live application and dated verification evidence
-are the repository demo artifacts; no prerecorded video is claimed.
+The [screen-recorded Part 1 demonstration](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
+was recorded from the running application on October 8, 2026. It is a 72-second
+MP4 stored at `docs/videos/expedia-lite-part1-demo.mp4`. The recording shows the
+leading-zero live search, live API result list and map, visible 5 km label and
+map attribution, synchronized list/marker selection, loading, invalid ZIP,
+unresolved ZIP, zero-results, and a final successful state. The accompanying
+[Part 1 demo script](docs/part1-demo-script.md) remains the repeatable narration
+and walkthrough procedure.
 
 1. Start FastAPI and Vue with the commands in [README.md](README.md).
 2. Enter `02108` and choose **Search live hotels**. Point out the confirmed ZIP,
@@ -200,7 +207,7 @@ Supporting artifacts: [focused research](docs/part1-location-research.md),
 - Pre-implementation early mockup: present and explicitly dated in sequence.
 - FastAPI/Vue implementation with protected backend configuration: present.
 - Expected-versus-observed verification with live ZIPs and date: present.
-- Demo script and exact recording procedure: present.
+- Screen-recorded MP4, demo script, and exact recording procedure: present.
 - AI disclosure and evidence, including a real revised approach: present.
 - Assessed commit identifier: recorded in the Submission Record above.
 
@@ -491,12 +498,12 @@ suites and real endpoints passed (E14). Neither failure was invented.
 
 ## B8. Access gaps, remaining actions, and scope
 
-The repository is publicly readable, but the assessed local commits remain
-unavailable there until the user authorizes/performs a push. The recording must
-also be uploaded somewhere accessible without a request and tested signed out.
-Still pending: private OpenRouter key and exact class model for one genuine
+The repository, Part 1 assessed commit, Part 2 implementation commit, report,
+and Part 1 demonstration are publicly available on `main`; anonymous access to
+the commit pages was confirmed October 8, 2026. Still pending for revised Part
+2 only: private OpenRouter key and exact class model for one genuine
 two-request run, the recorded DB Browser **Write Changes** checkpoint, and the
-video URL. Credentials must stay out of all evidence.
+Part 2 video URL. Credentials must stay out of all evidence.
 
 No vector database, embeddings, agent framework, deployment, payment, real
 inventory/booking, silent paid fallback, or unrelated feature was added.
