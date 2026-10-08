@@ -13,16 +13,16 @@ recorded **before production implementation of the live hotel search and map**.
 - Public branch containing the Part 1 code: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
 - Screen-recorded demo: [Expedia Lite Part 1 demo (MP4)](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-part1-demo.mp4)
 - Submission document: `report.md` (this file)
-- Regrade handoff: [docs/part1-regrade-handoff.md](docs/part1-regrade-handoff.md)
-- Final audit: [docs/part1-final-audit.md](docs/part1-final-audit.md)
-- Demo procedure: [docs/part1-demo-script.md](docs/part1-demo-script.md)
-- Dated verification: [docs/part1-verification-2026-09-29.md](docs/part1-verification-2026-09-29.md)
-- AI evidence: [prompts/07-part-1-live-hotel-search.md](prompts/07-part-1-live-hotel-search.md)
+- Regrade handoff: [docs/part1-regrade-handoff.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-regrade-handoff.md)
+- Final audit: [docs/part1-final-audit.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-final-audit.md)
+- Demo procedure: [docs/part1-demo-script.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-demo-script.md)
+- Dated verification: [docs/part1-verification-2026-09-29.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md)
+- AI evidence: [prompts/07-part-1-live-hotel-search.md](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md)
 
 ## 1. Research Notes
 
 The focused research is recorded in
-[Part 1 live hotel search research](docs/part1-location-research.md). The main
+[Part 1 live hotel search research](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-location-research.md). The main
 findings that affect implementation are:
 
 - [Geoapify Geocoding](https://apidocs.geoapify.com/docs/geocoding/) supports
@@ -51,7 +51,7 @@ findings that affect implementation are:
 
 ## 2. Early Mockup
 
-[Open the interactive Part 1 early mockup](docs/part1-live-hotel-search-mockup.html).
+[Open the Part 1 early mockup](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-live-hotel-search-mockup.html).
 
 The mockup was created **before Part 1 implementation**. It is a self-contained
 repository artifact with no network calls, API credentials, or claimed hotel
@@ -128,8 +128,8 @@ and data-access flow remain unchanged.
 ## 5. Verification Evidence
 
 The complete 16-case expected-versus-observed table is recorded in
-[the September 29 full verification evidence](docs/part1-verification-2026-09-29.md),
-with the reusable procedure retained in [docs/verification.md](docs/verification.md).
+[the September 29 full verification evidence](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md),
+with the reusable procedure retained in [docs/verification.md](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/verification.md).
 On September 29, 2026:
 
 - all 68 backend tests passed in the project virtual environment and the
@@ -167,7 +167,7 @@ AI assistance was used for repository inspection, research synthesis,
 implementation, test generation, browser verification, and documentation. The
 submitted work was checked against the live application rather than accepted
 from generated text alone. The retained
-[Part 1 AI evidence log](prompts/07-part-1-live-hotel-search.md) records the
+[Part 1 AI evidence log](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md) records the
 request, affected files, verification, and a legitimate failed approach: the
 first Leaflet marker keyboard implementation opened a popup on Enter without
 updating Vue selection. The log records the shared-handler correction and the
@@ -181,10 +181,10 @@ MP4 stored at `docs/videos/expedia-lite-part1-demo.mp4`. The recording shows the
 leading-zero live search, live API result list and map, visible 5 km label and
 map attribution, synchronized list/marker selection, loading, invalid ZIP,
 unresolved ZIP, zero-results, and a final successful state. The accompanying
-[Part 1 demo script](docs/part1-demo-script.md) remains the repeatable narration
+[Part 1 demo script](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-demo-script.md) remains the repeatable narration
 and walkthrough procedure.
 
-1. Start FastAPI and Vue with the commands in [README.md](README.md).
+1. Start FastAPI and Vue with the commands in [README.md](https://github.com/jakebutler22/Expedia-lite/blob/main/README.md).
 2. Enter `02108` and choose **Search live hotels**. Point out the confirmed ZIP,
    live result count, 5 km circle, numbered rows and markers, and attribution.
 3. Select a second hotel in the list; its map popup opens and both views show
@@ -195,12 +195,12 @@ and walkthrough procedure.
 5. Explain that visible hotel facts come from the API response and that live
    results intentionally omit price, rating, availability, and booking claims.
 
-Supporting artifacts: [focused research](docs/part1-location-research.md),
-[pre-implementation early mockup](docs/part1-live-hotel-search-mockup.html),
-[implementation/verification prompt](prompts/07-part-1-live-hotel-search.md),
-[full verification evidence](docs/part1-verification-2026-09-29.md), and
-[verification procedure](docs/verification.md), plus the
-[professor-style final audit](docs/part1-final-audit.md).
+Supporting artifacts: [focused research](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-location-research.md),
+[pre-implementation early mockup](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-live-hotel-search-mockup.html),
+[implementation/verification prompt](https://github.com/jakebutler22/Expedia-lite/blob/main/prompts/07-part-1-live-hotel-search.md),
+[full verification evidence](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-verification-2026-09-29.md), and
+[verification procedure](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/verification.md), plus the
+[professor-style final audit](https://github.com/jakebutler22/Expedia-lite/blob/main/docs/part1-final-audit.md).
 
 ## 8. Submission Checklist and Scope Boundary
 
