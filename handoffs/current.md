@@ -15,22 +15,22 @@
   requests for a successful query, and returns stage-specific sanitized errors.
   Generated SQL is never trusted: only a validated read from the three saved
   hotel tables can execute. The health route returns status phrases, not values.
-- **One genuine blocker:** The exact free Nemotron slug demonstrated in class is
-  absent from the repository, nearby course projects, Git history, and supplied
-  brief. Add that exact slug and a local OpenRouter key to ignored
-  `backend/.env` as `OPENROUTER_MODEL` and `OPENROUTER_API_KEY`, then verify the
-  exact catalog entry is still free before the live demo. These values must not
-  be pasted into Vue, a `VITE_` variable, evidence, or chat.
+- **Live provider:** The exact free Nemotron slug demonstrated in class was not
+  present in the supplied material, so the user approved the current zero-price
+  catalog entry `nvidia/nemotron-3.5-lightning:free`. A short-lived key and the
+  model ID remain only in ignored `backend/.env`; neither appears in Vue, a
+  `VITE_` variable, Git, evidence, or the recording. The October 8 live run
+  completed both provider requests and returned that exact model identity.
 - **Branch and protected history:** Work remains on `main`. The protected
   historical Part 1 checkpoint remains in Git history under
   `part1-submission`, and the Part 2 checkpoint remains under
   `part2-submission`. The final Assignment 2.1 Part 1 audit is complete; the
   assessed implementation commit is
   `de43dd9df5c7cc842e9693f29cd43cb85e43507a` and is recorded in `report.md`.
-  The revised Part 2 assessed implementation commit is
-  `e35c201ab36e83b814a678587646d19816bc3826`; Appendix B records it. The report
-  and handoff are intentionally committed afterward because a commit cannot
-  truthfully contain a hash that does not exist yet.
+  The revised Part 2 final assessed implementation commit is recorded in
+  `report.md` after the last tested implementation/video commit is created and
+  pushed. The report and handoff are committed once more afterward because a
+  commit cannot truthfully contain its own hash.
 - **Local hotel storage backend:** The canonical SQLite database now has
   additive `saved_hotels`, `saved_hotel_zips`, and `demo_hotel_nights` tables.
   `GET /api/saved-hotels`, `POST /api/saved-hotels`, and
@@ -69,8 +69,8 @@
 - **Dependencies:** The approved exact `leaflet@1.9.4` was already present and
   verified. All backend packages were also present. No dependency was added or
   installed during implementation.
-- **Checks:** After response-consistency hardening, the full **106-test**
-  backend suite, **26-test** focused RAG subset, **23** dependency-free frontend
+- **Checks:** After response-consistency and live-provider hardening, the full
+  **107-test** backend suite, **27-test** focused RAG subset, **23** dependency-free frontend
   request/formatting checks, production Vite build, and rejected-query fixture
   pass. Isolated
   local-hotel tests cover schema enforcement, fixed dates/defaults, leading-zero
@@ -117,7 +117,9 @@
   the demo procedure is `docs/revised-part2-demo-script.md`; the fixed sample is
   `backend/tests/fixtures/revised_part2_fixed_sample.json`; and selected AI
   evidence is `prompts/08-revised-part2-rag.md` plus
-  `prompts/09-revised-part2-final-verification.md`.
+  `prompts/09-revised-part2-final-verification.md` plus the final live-run
+  record in `prompts/10-revised-part2-live-finalization.md`. The completed
+  H.264 MP4 is `docs/videos/expedia-lite-revised-part2-demo.mp4`.
 - **Preserved Part 2 behavior:** SQLite remains the post-seed source of truth.
   Existing sample stay search, booking creation/history, cancellation, and
   deletion code paths were not replaced. Browser verification confirmed
@@ -140,8 +142,11 @@
   and preserved the edit. Removing Churchill left Beacon Hill intact. The
   local-hit request log contained only `/api/saved-hotels`; all protected
   Assignment 1 tables were byte-for-row identical to the pre-checkpoint backup.
-- **Remaining handoff:** The canonical database retains Beacon Hill as the live
-  RAG comparison row. The real OpenRouter key/model are not configured, so the
-  genuine two-request provider run, final recording, public video URL, assessed
-  commit, push, and anonymous-link checks are pending. The exact walkthrough is
-  `docs/revised-part2-demo-script.md`. No app or dependency was installed.
+- **Final live checkpoint:** The canonical database retains Beacon Hill as the
+  RAG comparison row. A real October 8 two-request run returned a passed,
+  executed query and one exact record with 71,500 cents/$715.00 for two rooms
+  over three nights; Vue also displayed the live no-match and insufficient-data
+  outcomes. The completed recording shows the local result/map, successful
+  trace/answer, and no-match trace. The report/evidence log records the
+  remaining fixture, DB Browser, restart, removal, preservation, and error
+  checks. No app or dependency was installed.

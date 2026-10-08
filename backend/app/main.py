@@ -328,7 +328,6 @@ def create_app(
     @application.post(
         "/api/hotel-insights",
         response_model=HotelInsightResponse,
-        response_model_exclude_none=True,
     )
     def post_hotel_insight(
         insight: HotelInsightQuestion,

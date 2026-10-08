@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expedia Lite — Rejected-query fixture evidence</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: #07111f; color: #eaf2ff; display: grid; place-items: center; padding: 36px; }
+      main { width: min(1050px, 100%); background: #0f1f35; border: 1px solid #35527a; border-radius: 18px; padding: 32px; box-shadow: 0 20px 60px #0008; }
+      .eyebrow { color: #8fc7ff; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      h1 { margin: 8px 0 10px; font-size: clamp(30px, 5vw, 52px); }
+      p { color: #c3d1e6; font-size: 19px; line-height: 1.55; }
+      pre { margin: 24px 0; padding: 26px; overflow-x: auto; border-radius: 12px; background: #050b14; border: 1px solid #294465; color: #d9f7e4; font: 700 20px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .pass { display: inline-block; color: #082113; background: #65e39b; border-radius: 999px; padding: 8px 14px; font-weight: 900; }
+      ul { font-size: 18px; line-height: 1.6; }
+      code { color: #ffd38a; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">Expedia Lite · Revised Assignment 2 Part 2</div>
+      <h1>Rejected-query security fixture</h1>
+      <p>
+        Repeatable isolated check run on October 8, 2026. This is deliberately
+        labeled fixture evidence: it does not claim that a live provider tried
+        to modify the database.
+      </p>
+      <pre>FIXTURE ONLY - no live provider was called
+Proposed SQL: DELETE FROM saved_hotels
+Pipeline status: rejected_query
+Validation: rejected
+Generated query executed: False
+Second model request calls: 0
+Protected data unchanged: True
+Temporary database removed: True</pre>
+      <span class="pass">PASS — rejected before execution</span>
+      <ul>
+        <li>The proposed <code>DELETE</code> did not run.</li>
+        <li>No retrieved records were exposed and request two was not sent.</li>
+        <li>Protected Assignment 1 data compared equal before and after.</li>
+        <li>The isolated temporary database was removed automatically.</li>
+      </ul>
+    </main>
+  </body>
+</html>

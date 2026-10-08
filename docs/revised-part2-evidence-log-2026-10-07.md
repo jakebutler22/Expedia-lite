@@ -292,13 +292,49 @@ was `5fbc9303ad49f9b452aeecf20471de95db2d138645c73a21e115fd715b676166`, and
 | Ask a saved-hotel question while OpenRouter configuration is absent | Show an honest provider failure without disturbing hotel search/local data. | Vue displayed **Saved hotel insights unavailable**, “OpenRouter insights service is not configured,” and “The hotel search and local-storage features remain available.” | Pass | This is the real unconfigured-service state, not the required live success. |
 | Inspect browser console after the real search, local-storage, restart, and provider-failure checks | No application warning or error entries. | Browser log inspection returned an empty list for warning/error levels. | Pass | None. |
 
-The genuine provider key and exact class model setting are still the only
-inputs unavailable to this audit. The live two-request evidence and final
-recording cannot be represented as complete until those ignored local settings
-exist and the configured model is verified as a free catalog entry.
+At the E16 checkpoint, the provider key and selected live model were not yet
+configured, so that row records the genuine unconfigured-service behavior.
+They were configured later in ignored `backend/.env`; E17 below supersedes the
+earlier pending-provider note with the completed live-provider and recording
+observations. The unknown classroom model slug was not guessed or claimed.
 
-The complete post-correction check then passed: **106 backend tests**, **23
+The complete post-correction check then passed: **107 backend tests**, **23
 frontend tests**, the Vite production build with 15 modules transformed, and
 the labeled rejected-query fixture. The fixture again reported execution
 false, zero second-model calls, protected data unchanged, and temporary
 database removal. No dependency was installed or upgraded.
+
+## E17 — October 8 live provider and final demonstration
+
+The user approved the current zero-price OpenRouter catalog entry
+`nvidia/nemotron-3.5-lightning:free` because the exact model demonstrated in
+class was not present in the supplied materials. A short-lived key and that
+model ID were placed only in ignored `backend/.env`. The key and authorization
+header were never printed, committed, copied to Vue, returned by an endpoint,
+or shown in the recording.
+
+| Input/action | Expected result | Observed result | Pass/fail | Correction made |
+| --- | --- | --- | --- | --- |
+| Ask “Which saved hotels for ZIP 02108 can provide 2 rooms from check-in 2026-10-10 through checkout 2026-10-13, and what is the simulated total cost?” against the canonical database | Request one proposes one read-only query; FastAPI validates and executes it; exact rows reach request two; the answer matches those rows and labels simulated data honestly. | The returned model was `nvidia/nemotron-3.5-lightning:free`. Validation passed; execution and request two were true. The one Beacon Hill record had `searched_zip=02108`, `stay_nights=3`, `minimum_rooms_available=7`, and `total_cost_cents=71500`. The final answer reported **$715.00** and described the figures as simulated classroom data, not live inventory. | Pass | The first live request exhausted the 20-second limit while the reasoning model produced reasoning tokens. The backend now sends the documented `reasoning_effort: none`; the same two-stage request then completed within the bound. |
+| Repeat that question in Vue | Safe trace, exact records, and final answer are visible without exposing a credential. | Vue showed **Grounded answer**, the exact model ID, proposed SQL, validation `passed`, execution true, the exact record, request two sent, and the `$715.00` answer. | Pass | A provider retry first proposed the nonexistent alias `s.searched_zip`; validation rejected it before execution. The prompt was corrected with explicit table ownership and a valid aggregate query shape, and the browser rerun passed. |
+| Ask for at least 999 rooms on every included night | A valid empty query still reaches request two and becomes `no_matches`. | Vue showed **No saved hotel matches**, validation `passed`, query executed, zero records, and request two sent. | Pass | The prompt now makes clear that a large numeric room request must be queried rather than declared insufficient. |
+| Ask for November 10–13, 2026 | Dates outside the stored October coverage return `insufficient_data`; no query or second request runs. | Vue showed **Insufficient saved data**, `proposed_sql: null`, validation `not_run`, execution false, request two false, and zero records. | Pass | The first real UI response omitted the null trace field and failed frontend validation. FastAPI now preserves explicit nulls; a route regression test and browser rerun passed. |
+| Provider surrounds JSON with prose or adds one trailing SQL semicolon | Tolerate harmless provider formatting while preserving the independent SQL security boundary. | A regression test passed with prose-wrapped JSON and one trailing semicolon. The normalized query still passed through authorizer, compile, work, and result limits. | Pass | JSON decoding now extracts one object, and only one terminal semicolon is removed. Embedded semicolons, multiple statements, comments, writes, and unauthorized reads remain rejected. |
+| Record the live browser demonstration and rejected-query supplement | Produce credential-free MP4 evidence of the central workflow, an honest non-success state, and the disallowed-query protection. | `docs/videos/expedia-lite-revised-part2-demo.mp4` is H.264 in an ISO MP4 v2 container, 1280 × 828, 104.88 seconds, approximately 51 MB. SHA-256: `397e01c83f64eb4181d7a8453afef20ae5b4266982631c4163d6ff197ad641de`. It shows the local `02108` result, stored values, list/map/attribution, the complete successful two-request trace, exact record and answer, and the successful empty/no-match path. The 14.88-second H.264 supplement visibly shows the fixture-only rejected `DELETE`, execution false, zero second calls, protected data unchanged, and cleanup; SHA-256: `6cbab6c396d0bd33c33059ab3d5bb33a29736fe92e8d6945d724fbbab5047a15`. | Pass | An interrupted capture was discarded by macOS. Final captures were allowed to finalize, then converted with macOS's built-in converter; no dependency was installed. |
+
+Final checks after these corrections:
+
+- full backend suite: **107 passed** (two dependency deprecation warnings);
+- focused revised-Part-2 backend subset: **27 passed**;
+- frontend request/formatting checks: **23 passed**;
+- production frontend build: passed, 15 modules transformed in 116 ms;
+- rejected-query fixture: `rejected_query`, validation rejected, execution
+  false, zero second-model calls, protected data unchanged, temporary database
+  removed;
+- browser console after the real runs: no application warning/error entries.
+
+The real video covers the successful question and the required no-match case.
+The explicit insufficient-data, rejected-query, DB Browser **Write Changes**,
+restart persistence, scoped removal, and protected-table checks remain in this
+expected-versus-observed record so the MP4 and report do not overclaim what was
+captured on screen.

@@ -19,11 +19,11 @@ Official catalog snapshot on October 7, 2026 (research evidence, not a model sel
 | `nvidia/nemotron-3-ultra-550b-a55b:free` | $0 / $0 | 1,000,000 / 65,536 tokens | the same core parameters plus `reasoning_effort` |
 | `nvidia/nemotron-3-super-120b-a12b:free` | $0 / $0 | 262,144 / 235,929 tokens | the same core parameters plus `response_format` and structured outputs |
 
-All three listed the small common subset used by this implementation: `model`, message input, `max_tokens`, and `temperature`. Availability can change independently of price, so the exact class entry still requires a live recheck immediately before the demo.
+All three listed the small common subset used by this implementation: `model`, message input, `max_tokens`, and `temperature`. Availability can change independently of price, so the selected entry requires a live recheck immediately before the demo.
 
 Observed weakness: the course material available in this repository, neighboring projects, Git history, and the supplied revised brief does not contain the exact model slug demonstrated in class. Choosing one of several current Nemotron variants would be a guess and could silently select the wrong class configuration.
 
-Decision: support exactly one explicit backend `OPENROUTER_MODEL` value and one backend key. Do not provide a paid fallback, use the automatic free router, or manufacture a `:free` suffix. Until the exact class slug is supplied locally, configuration remains visibly incomplete. The backend will use only broadly supported parameters (`model`, `messages`, `temperature`, and `max_tokens`) after the configured slug is verified in the catalog.
+Decision: support exactly one explicit backend `OPENROUTER_MODEL` value and one backend key. Do not provide a paid fallback, use the automatic free router, or manufacture a `:free` suffix. Because the course materials never supplied the exact classroom slug, the user approved `nvidia/nemotron-3.5-lightning:free` for the final October 8 run after its live catalog entry was verified at zero prompt/completion price. The backend records that exact identity rather than calling it the unknown class model.
 
 ### Geoapify location pipeline
 
@@ -84,9 +84,22 @@ but the implemented evidence panel now exposes the proposed SQL, validator
 decision, bounded execution, exact records, and second-request status. This is
 the primary documented design revision for the final AI evidence log.
 
-## Provider-setting gap
+## Final provider selection and live observation
 
-The exact class Nemotron model ID remains genuinely missing. Add the class-provided slug to `OPENROUTER_MODEL` in ignored `backend/.env` after confirming that exact catalog entry is still free. Add the OpenRouter key beside it as `OPENROUTER_API_KEY`. Do not paste either value into source control or the frontend.
+The exact classroom slug remained unavailable, so the final verification used
+the explicitly selected current entry `nvidia/nemotron-3.5-lightning:free`.
+The short-lived key and model setting were placed only in ignored
+`backend/.env`; neither entered Git, Vue, API responses, or the recording. On
+October 8, 2026 the real provider returned the same model identity in both
+requests, a valid saved-hotel aggregate query, and a grounded answer using the
+exact retrieved record.
+
+The first default-reasoning call exceeded the application's 20-second bound.
+OpenRouter's current chat-completion reference documents `reasoning_effort`
+including `none`; the selected model accepted that value and returned without
+reasoning tokens. This is now explicit in the backend request. JSON decoding
+also accepts one provider JSON object surrounded by prose while all SQL still
+passes the independent deny-by-default validator.
 
 ### October 8 catalog recheck
 
@@ -96,6 +109,5 @@ free entries, including `nvidia/nemotron-3.5-lightning:free`,
 `nvidia/nemotron-3-super-120b-a12b:free`, and
 `nvidia/nemotron-3-ultra-550b-a55b:free`, all with `max_tokens` and
 `temperature` support. Because the available course pages still did not name
-which one was demonstrated, this confirms rather than removes the ambiguity:
-the submission must record the user-supplied class slug actually used and must
-not relabel another current free model as the class model.
+which one was demonstrated, the final report records the actually selected
+model and does not relabel it as the unknown classroom model.

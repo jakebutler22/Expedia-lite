@@ -1,9 +1,12 @@
-# Revised Part 2 recorded-demonstration handoff
+# Revised Part 2 recorded-demonstration record
 
-The recording link is **PENDING**. Do not call the model interaction live until
-ignored `backend/.env` contains a real `OPENROUTER_API_KEY` and the exact
-class-approved free Nemotron `OPENROUTER_MODEL`. Never show that file, its key,
-browser authorization headers, or Terminal environment output in the video.
+The completed recording is
+[docs/videos/expedia-lite-revised-part2-demo.mp4](videos/expedia-lite-revised-part2-demo.mp4).
+It used the user-approved current zero-price catalog entry
+`nvidia/nemotron-3.5-lightning:free` on October 8, 2026. The short-lived key
+remained only in ignored `backend/.env`; the recording does not show that file,
+the key, authorization headers, or Terminal environment output. The exact
+classroom model slug was unavailable and is not claimed.
 
 DB Browser for SQLite 3.13.1 was available on October 8. The audit genuinely
 opened the canonical database, changed Beacon Hill Hotel and Bistro's October
@@ -91,9 +94,9 @@ Show, in this order:
 7. **Grounded-answer model request** marked sent;
 8. final answer.
 
-State the model ID and recording date aloud. Call this live OpenRouter evidence
-only if the configured provider genuinely returned both responses. Otherwise
-say **live provider demonstration pending**.
+State the model ID and recording date aloud. The completed run is live
+OpenRouter evidence because the configured provider genuinely returned both
+responses; the trace records the actual returned model identity.
 
 Evidence target: the whole on-screen trace, exact model ID, retrieved rows, and
 answer. Network will show the browser's single `POST /api/hotel-insights`; the
@@ -176,14 +179,29 @@ and preserved Assignment 1 data.
 
 ## Recording/upload status
 
-- Local recording file: **[PENDING]**
-- Accessible video URL: **[PENDING]**
-- Live model ID/date: **[PENDING configured provider and genuine two-call run]**
+- Local recording file:
+  `docs/videos/expedia-lite-revised-part2-demo.mp4`
+- Accessible video URL:
+  <https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-revised-part2-demo.mp4>
+- Rejected-query safety supplement:
+  <https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-rejected-query-supplement.mp4>
+- Live model ID/date: `nvidia/nemotron-3.5-lightning:free`, October 8, 2026
+- Recording contents: local-first `02108` result; stored `$157.50`/7-room
+  value; synchronized list/map with visible attribution; complete successful
+  request-one → validated SQL → exact row → request-two → `$715.00` answer;
+  and a distinct passed/executed successful-empty **No saved hotel matches**
+  case.
+- File verification: H.264, ISO MP4 v2, 1280 × 828, 104.88 seconds,
+  approximately 51 MB; SHA-256
+  `397e01c83f64eb4181d7a8453afef20ae5b4266982631c4163d6ff197ad641de`.
+- Supplement verification: H.264, ISO MP4 v2, 1280 × 828, 14.88 seconds,
+  approximately 10.4 MB; SHA-256
+  `6cbab6c396d0bd33c33059ab3d5bb33a29736fe92e8d6945d724fbbab5047a15`.
 - DB Browser Write Changes checkpoint: **VERIFIED October 8, 2026** using
   Beacon Hill Hotel and Bistro, `2026-10-10`, 10,000 cents/20 rooms → 15,750
   cents/7 rooms; Vue displayed `$157.50`/`7` without restart and after restart.
 
-After recording, upload the video somewhere the instructor can open without a
-new access request, test the link in a signed-out/private window, then replace
-the pending URL in `report.md`. Do not publish or change repository visibility
-without explicit authorization.
+The report and dated evidence log contain the additional expected-versus-
+observed insufficient-data, rejected-query, DB Browser, restart, removal, and
+preservation checks. The public video link is verified after the final push so
+the instructor does not need a separate access request.

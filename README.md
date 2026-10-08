@@ -55,10 +55,10 @@ Set `GEOAPIFY_API_KEY` only in `backend/.env`. Revised Part 2 also needs:
 
 ```dotenv
 OPENROUTER_API_KEY=<your local OpenRouter key>
-OPENROUTER_MODEL=<the exact free Nemotron model slug demonstrated in class>
+OPENROUTER_MODEL=nvidia/nemotron-3.5-lightning:free
 ```
 
-The exact class model slug is not present in the available repository or course material and is intentionally not guessed. Confirm the exact class-provided entry is still free in the live OpenRouter catalog before entering it. Expedia Lite accepts only an explicit NVIDIA Nemotron `:free` model setting and has no automatic or paid fallback. Do not put either provider key in `frontend/.env`, Vue source, or a `VITE_` variable; `VITE_` values are bundled for the browser.
+The exact class model slug was not present in the available repository or course material. For the October 8, 2026 final verification, the user approved the current catalog entry `nvidia/nemotron-3.5-lightning:free`; OpenRouter's Models API listed zero prompt and completion price for that exact slug. Recheck the catalog before a later run because free entries can change. Expedia Lite accepts only an explicit NVIDIA Nemotron `:free` model setting and has no automatic or paid fallback. Do not put either provider key in `frontend/.env`, Vue source, or a `VITE_` variable; `VITE_` values are bundled for the browser.
 
 `backend/app/geocoding.py` owns exact U.S. postcode confirmation, while `backend/app/places.py` owns the 5 km hotel query and provider normalization. `GET /api/hotels?zip=02108` runs the complete workflow. A successful response includes the confirmed search center, radius, count, and only real available Geoapify hotel fields. Invalid, unresolved, zero-result, configuration, timeout, and upstream-failure outcomes remain distinguishable. The earlier ZIP-only demonstration endpoints remain available for compatibility.
 
@@ -90,6 +90,8 @@ made in DB Browser is visible on the next lookup without restarting FastAPI.
 After successful validation, FastAPI executes the bounded query. Even an empty result proceeds to request two so the model can return a grounded `no_matches` outcome. Nonempty results, the exact validated SQL, and the original question go to request two; the response includes an auditable trace containing the proposed SQL and the exact retrieved records. Out-of-coverage questions can return `insufficient_data` before SQL, while unsafe proposals return `rejected_query` without execution or request two. Provider location data is not proof of real hotel inventory, and every nightly rate, room count, and total remains labeled as simulated course data.
 
 The current [research](docs/revised-part2-rag-research.md), [pre-implementation chatbot mockup](docs/revised-part2-chatbot-early-mockup.html), [dated evidence log](docs/revised-part2-evidence-log-2026-10-07.md), and [demo script](docs/revised-part2-demo-script.md) document the revised assignment.
+
+The final [Revised Part 2 demonstration](docs/videos/expedia-lite-revised-part2-demo.mp4) shows the real local-first `02108` result, stored `$157.50`/7-room database edit, synchronized map with attribution, live two-request OpenRouter trace, exact retrieved record, grounded `$715.00` answer, and successful empty/no-match path. A short [rejected-query supplement](docs/videos/expedia-lite-rejected-query-supplement.mp4) visibly records the labeled fixture's rejected `DELETE`, zero execution, zero second request, unchanged protected data, and temporary-database cleanup.
 
 ### Frontend
 
@@ -150,4 +152,4 @@ unfinished observations as explicit placeholders.
 
 ## Current limitations
 
-The project is intended for local classroom use. Geoapify results and counts can change as its place data changes. The exact class OpenRouter model slug and a local OpenRouter API key are still required for the final genuine live-model demo; the implementation does not guess or fall back to a paid model. The application does not include authentication, authorization, production deployment controls, vector retrieval, embeddings, agent behavior, actual inventory, or an automated Vue component/end-to-end suite.
+The project is intended for local classroom use. Geoapify results/counts and OpenRouter free-model availability can change over time. A local backend OpenRouter key is required to repeat the live model calls; no credential is committed. The application does not include authentication, authorization, production deployment controls, vector retrieval, embeddings, agent behavior, actual inventory, or an automated Vue component/end-to-end suite.

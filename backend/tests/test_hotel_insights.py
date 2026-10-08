@@ -118,7 +118,9 @@ def test_fixed_sample_two_requests_wrap_validated_sql_and_exact_records(
             events.append("model_request_1")
             return StubResponse(
                 provider_payload(
-                    json.dumps({"status": "query", "sql": sample["sql"]})
+                    "Generated proposal:\n"
+                    + json.dumps({"status": "query", "sql": f'{sample["sql"]};'})
+                    + "\nEnd proposal."
                 )
             )
         events.append("model_request_2")
@@ -143,6 +145,8 @@ def test_fixed_sample_two_requests_wrap_validated_sql_and_exact_records(
     assert len(requests) == 2
     assert requests[0]["model"] == OPENROUTER_TEST_MODEL
     assert requests[1]["model"] == OPENROUTER_TEST_MODEL
+    assert requests[0]["reasoning_effort"] == "none"
+    assert requests[1]["reasoning_effort"] == "none"
     assert result["status"] == "answer"
     assert result["records"] == sample["expected_records"]
     assert result["answer"] == sample["expected_answer"]
@@ -222,6 +226,36 @@ def test_out_of_coverage_is_insufficient_without_sql_or_second_request(
     assert result["status"] == "insufficient_data"
     assert result["trace"]["query_executed"] is False
     assert result["trace"]["second_request_sent"] is False
+
+
+def test_insufficient_route_keeps_explicit_null_trace_fields(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_provider(monkeypatch)
+    monkeypatch.setattr(
+        openrouter.httpx,
+        "post",
+        lambda *_args, **_kwargs: StubResponse(
+            provider_payload(
+                json.dumps(
+                    {
+                        "status": "insufficient_data",
+                        "message": "The requested dates are outside stored coverage.",
+                    }
+                )
+            )
+        ),
+    )
+
+    response = client.post(
+        "/api/hotel-insights",
+        json={"question": "Find a saved hotel outside stored coverage."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["trace"]["proposed_sql"] is None
+    assert response.json()["answer"] is None
 
 
 def test_successful_empty_query_reaches_second_request_as_no_matches(
