@@ -27,10 +27,10 @@
   `part2-submission`. The final Assignment 2.1 Part 1 audit is complete; the
   assessed implementation commit is
   `de43dd9df5c7cc842e9693f29cd43cb85e43507a` and is recorded in `report.md`.
-  The revised Part 2 final assessed implementation commit is recorded in
-  `report.md` after the last tested implementation/video commit is created and
-  pushed. The report and handoff are committed once more afterward because a
-  commit cannot truthfully contain its own hash.
+  The revised Part 2 final assessed implementation/video commit is
+  `3de4ed24f0390feb738bf8f949e9d0b21cec7075` and is recorded in `report.md`.
+  The report and handoff are committed once more afterward because a commit
+  cannot truthfully contain its own hash.
 - **Local hotel storage backend:** The canonical SQLite database now has
   additive `saved_hotels`, `saved_hotel_zips`, and `demo_hotel_nights` tables.
   `GET /api/saved-hotels`, `POST /api/saved-hotels`, and

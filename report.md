@@ -4,7 +4,7 @@
 
 - Public repository: [github.com/jakebutler22/Expedia-lite](https://github.com/jakebutler22/Expedia-lite)
 - Public branch: [`main`](https://github.com/jakebutler22/Expedia-lite/tree/main)
-- Assessed Part 2 commit: **__ASSESSED_COMMIT__**
+- Assessed Part 2 commit: [`3de4ed24f0390feb738bf8f949e9d0b21cec7075`](https://github.com/jakebutler22/Expedia-lite/commit/3de4ed24f0390feb738bf8f949e9d0b21cec7075)
 - Screen-recorded demonstration: [public MP4](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-revised-part2-demo.mp4)
 - Rejected-query video evidence: [public MP4 supplement](https://github.com/jakebutler22/Expedia-lite/raw/refs/heads/main/docs/videos/expedia-lite-rejected-query-supplement.mp4)
 - Submission file: `report.md` (this file)
