@@ -19,7 +19,7 @@ from .bookings import (
     list_traveler_bookings,
     list_users,
 )
-from .config import geoapify_api_key_status
+from .config import geoapify_api_key_status, openrouter_configuration_status
 from .database import (
     DATA_DIRECTORY,
     DEFAULT_DATABASE_PATH,
@@ -37,16 +37,41 @@ from .geocoding import (
     lookup_us_postcode,
 )
 from .hotel_search import search_hotels_by_postcode
+from .hotel_insights import (
+    InvalidInsightQuestionError,
+    answer_saved_hotel_question,
+)
 from .models import (
     Booking,
     BookingCreate,
     BookingDeleteResponse,
     BookingHistoryResponse,
     Hotel,
+    HotelInsightQuestion,
+    HotelInsightResponse,
     HotelSearchResponse,
+    SavedHotel,
+    SavedHotelCreate,
+    SavedHotelDeleteResponse,
+    SavedHotelLookupResponse,
     SearchResponse,
     User,
     ZipLocationResponse,
+)
+from .openrouter import (
+    OpenRouterHTTPError,
+    OpenRouterNetworkError,
+    OpenRouterNotConfiguredError,
+    OpenRouterRateLimitError,
+    OpenRouterResponseError,
+    OpenRouterTimeoutError,
+)
+from .saved_hotels import (
+    InvalidSavedHotelRequestError,
+    SavedHotelNotFoundError,
+    list_saved_hotels_by_zip,
+    remove_saved_hotel,
+    save_provider_hotel,
 )
 from .search import InvalidSearchQueryError, search_stays
 
@@ -69,6 +94,22 @@ def _raise_booking_http_error(error: Exception) -> NoReturn:
         error, (BookingNotFoundError, TripNotFoundError, UserNotFoundError)
     ):
         raise HTTPException(status_code=404, detail=str(error)) from error
+    raise error
+
+
+def _raise_saved_hotel_http_error(
+    error: Exception,
+    operation: str,
+) -> NoReturn:
+    if isinstance(error, InvalidSavedHotelRequestError):
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if isinstance(error, SavedHotelNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if isinstance(error, sqlite3.Error):
+        raise HTTPException(
+            status_code=500,
+            detail=f"Saved hotel {operation} failed.",
+        ) from None
     raise error
 
 
@@ -163,8 +204,11 @@ def create_app(
 
     application = FastAPI(
         title="Expedia Lite API",
-        description="Hotel search and booking CRUD backed by SQLite.",
-        version="2.0.0",
+        description=(
+            "Hotel search, saved-hotel business intelligence, and booking CRUD "
+            "backed by SQLite."
+        ),
+        version="2.1.0",
         lifespan=lifespan,
     )
     application.state.database_path = Path(database_path)
@@ -182,6 +226,7 @@ def create_app(
         return {
             "status": "ok",
             "geoapify_api_key_status": geoapify_api_key_status(),
+            **openrouter_configuration_status(),
         }
 
     @application.get(
@@ -217,6 +262,126 @@ def create_app(
         ),
     ) -> HotelSearchResponse:
         return _search_live_hotels(zip)
+
+    @application.get(
+        "/api/saved-hotels",
+        response_model=SavedHotelLookupResponse,
+    )
+    def get_saved_hotels(
+        connection: DatabaseConnection,
+        zip: str = Query(
+            ...,
+            description="Searched five-digit U.S. ZIP association",
+        ),
+    ) -> SavedHotelLookupResponse:
+        try:
+            hotels = list_saved_hotels_by_zip(connection, zip)
+        except (InvalidSavedHotelRequestError, sqlite3.Error) as error:
+            _raise_saved_hotel_http_error(error, "lookup")
+
+        normalized_zip = zip.strip()
+        return SavedHotelLookupResponse(
+            zip=normalized_zip,
+            count=len(hotels),
+            hotels=hotels,
+        )
+
+    @application.post(
+        "/api/saved-hotels",
+        response_model=SavedHotel,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def post_saved_hotel(
+        saved_hotel: SavedHotelCreate,
+        connection: DatabaseConnection,
+    ) -> dict[str, object]:
+        try:
+            return save_provider_hotel(
+                connection,
+                saved_hotel.searched_zip,
+                saved_hotel.hotel.model_dump(exclude_none=True),
+            )
+        except (InvalidSavedHotelRequestError, sqlite3.Error) as error:
+            _raise_saved_hotel_http_error(error, "save")
+
+    @application.delete(
+        "/api/saved-hotels/{place_id}",
+        response_model=SavedHotelDeleteResponse,
+    )
+    def delete_saved_hotel(
+        place_id: str,
+        connection: DatabaseConnection,
+    ) -> SavedHotelDeleteResponse:
+        try:
+            deleted_place_id = remove_saved_hotel(connection, place_id)
+        except (
+            InvalidSavedHotelRequestError,
+            SavedHotelNotFoundError,
+            sqlite3.Error,
+        ) as error:
+            _raise_saved_hotel_http_error(error, "removal")
+        return SavedHotelDeleteResponse(
+            place_id=deleted_place_id,
+            deleted=True,
+        )
+
+    @application.post(
+        "/api/hotel-insights",
+        response_model=HotelInsightResponse,
+        response_model_exclude_none=True,
+    )
+    def post_hotel_insight(
+        insight: HotelInsightQuestion,
+        connection: DatabaseConnection,
+    ) -> dict[str, object]:
+        try:
+            return answer_saved_hotel_question(connection, insight.question)
+        except InvalidInsightQuestionError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        except OpenRouterNotConfiguredError:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="OpenRouter insights service is not configured.",
+            ) from None
+        except OpenRouterTimeoutError as error:
+            stage = (
+                "SQL generation"
+                if error.stage == "sql_generation"
+                else "answer generation"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=f"OpenRouter {stage} timed out.",
+            ) from None
+        except OpenRouterRateLimitError as error:
+            stage = (
+                "SQL generation"
+                if error.stage == "sql_generation"
+                else "answer generation"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"OpenRouter {stage} is temporarily rate limited.",
+            ) from None
+        except (
+            OpenRouterNetworkError,
+            OpenRouterHTTPError,
+            OpenRouterResponseError,
+        ) as error:
+            stage = (
+                "SQL generation"
+                if error.stage == "sql_generation"
+                else "answer generation"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"OpenRouter {stage} failed.",
+            ) from None
+        except sqlite3.Error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Saved hotel insights lookup failed.",
+            ) from None
 
     @application.get("/api/stays", response_model=SearchResponse)
     def get_stays(

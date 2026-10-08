@@ -1,0 +1,98 @@
+{
+  "fixture_label": "FIXTURE ONLY - revised Part 2 deterministic RAG sample",
+  "observation_scope": "Automated and recorded fixture checks only; not live provider evidence.",
+  "question": "Which saved hotels for ZIP 02108 can provide 2 rooms from October 10 through checkout October 13, 2026, and what is the simulated total cost?",
+  "out_of_coverage_question": "Which saved hotels can provide 1 room from November 1 through checkout November 3, 2026?",
+  "sql": "SELECT h.provider_place_id, h.hotel_name, h.address, '02108' AS searched_zip, '2026-10-10' AS check_in, '2026-10-13' AS checkout, 2 AS requested_rooms, COUNT(DISTINCT n.night_date) AS stay_nights, MIN(n.rooms_available) AS minimum_rooms_available, SUM(n.nightly_rate_cents) * 2 AS total_cost_cents FROM saved_hotels AS h JOIN demo_hotel_nights AS n ON n.saved_hotel_id = h.saved_hotel_id WHERE n.night_date >= '2026-10-10' AND n.night_date < '2026-10-13' AND EXISTS (SELECT 1 FROM saved_hotel_zips AS z WHERE z.saved_hotel_id = h.saved_hotel_id AND z.searched_zip = '02108') GROUP BY h.saved_hotel_id, h.provider_place_id, h.hotel_name, h.address HAVING COUNT(DISTINCT n.night_date) = 3 AND MIN(n.rooms_available) >= 2 ORDER BY total_cost_cents, h.provider_place_id LIMIT 50",
+  "expected_records": [
+    {
+      "provider_place_id": "fixture-eligible",
+      "hotel_name": "Eligible Inn",
+      "address": "1 Leading Zero Way, Boston, MA 02108",
+      "searched_zip": "02108",
+      "check_in": "2026-10-10",
+      "checkout": "2026-10-13",
+      "requested_rooms": 2,
+      "stay_nights": 3,
+      "minimum_rooms_available": 2,
+      "total_cost_cents": 67000
+    }
+  ],
+  "expected_answer": "Eligible Inn can provide 2 rooms for the three included nights from October 10 through October 12 for 67000 cents ($670.00) in simulated classroom data. The October 13 checkout date is excluded; these values are not live prices, real inventory, or booking information.",
+  "hotels": [
+    {
+      "provider_place_id": "fixture-eligible",
+      "hotel_name": "Eligible Inn",
+      "address": "1 Leading Zero Way, Boston, MA 02108",
+      "latitude": 42.358,
+      "longitude": -71.061,
+      "searched_zips": ["02108", "02109"],
+      "nights": [
+        ["2026-10-10", 10000, 3],
+        ["2026-10-11", 12500, 2],
+        ["2026-10-12", 11000, 4],
+        ["2026-10-13", 90000, 0],
+        ["2026-10-14", 10000, 3]
+      ]
+    },
+    {
+      "provider_place_id": "fixture-missing-middle",
+      "hotel_name": "Missing Middle Night Hotel",
+      "address": "2 Fixture Way, Boston, MA 02108",
+      "latitude": 42.359,
+      "longitude": -71.062,
+      "searched_zips": ["02108"],
+      "nights": [
+        ["2026-10-10", 8000, 5],
+        ["2026-10-12", 8000, 5],
+        ["2026-10-13", 8000, 5],
+        ["2026-10-14", 8000, 5]
+      ]
+    },
+    {
+      "provider_place_id": "fixture-sold-out",
+      "hotel_name": "Sold Out Night Hotel",
+      "address": "3 Fixture Way, Boston, MA 02108",
+      "latitude": 42.36,
+      "longitude": -71.063,
+      "searched_zips": ["02108"],
+      "nights": [
+        ["2026-10-10", 7000, 5],
+        ["2026-10-11", 7000, 0],
+        ["2026-10-12", 7000, 5],
+        ["2026-10-13", 7000, 5],
+        ["2026-10-14", 7000, 5]
+      ]
+    },
+    {
+      "provider_place_id": "fixture-insufficient-rooms",
+      "hotel_name": "One Room Night Hotel",
+      "address": "4 Fixture Way, Boston, MA 02108",
+      "latitude": 42.361,
+      "longitude": -71.064,
+      "searched_zips": ["02108"],
+      "nights": [
+        ["2026-10-10", 6000, 3],
+        ["2026-10-11", 6000, 1],
+        ["2026-10-12", 6000, 3],
+        ["2026-10-13", 6000, 3],
+        ["2026-10-14", 6000, 3]
+      ]
+    },
+    {
+      "provider_place_id": "fixture-other-zip",
+      "hotel_name": "Other ZIP Hotel",
+      "address": "5 Fixture Way, New York, NY 10001",
+      "latitude": 40.75,
+      "longitude": -73.997,
+      "searched_zips": ["10001"],
+      "nights": [
+        ["2026-10-10", 1000, 20],
+        ["2026-10-11", 1000, 20],
+        ["2026-10-12", 1000, 20],
+        ["2026-10-13", 1000, 20],
+        ["2026-10-14", 1000, 20]
+      ]
+    }
+  ]
+}

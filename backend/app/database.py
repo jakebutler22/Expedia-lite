@@ -61,6 +61,39 @@ SCHEMA_STATEMENTS = (
         completed_at TEXT NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS saved_hotels (
+        saved_hotel_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider_place_id TEXT NOT NULL UNIQUE,
+        hotel_name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        latitude REAL NOT NULL CHECK (latitude >= -90 AND latitude <= 90),
+        longitude REAL NOT NULL CHECK (longitude >= -180 AND longitude <= 180)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS saved_hotel_zips (
+        saved_hotel_id INTEGER NOT NULL,
+        searched_zip TEXT NOT NULL
+            CHECK (searched_zip GLOB '[0-9][0-9][0-9][0-9][0-9]'),
+        PRIMARY KEY (saved_hotel_id, searched_zip),
+        FOREIGN KEY (saved_hotel_id) REFERENCES saved_hotels (saved_hotel_id)
+            ON UPDATE RESTRICT ON DELETE CASCADE
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS demo_hotel_nights (
+        saved_hotel_id INTEGER NOT NULL,
+        night_date TEXT NOT NULL,
+        nightly_rate_cents INTEGER NOT NULL DEFAULT 10000
+            CHECK (nightly_rate_cents >= 0),
+        rooms_available INTEGER NOT NULL DEFAULT 20
+            CHECK (rooms_available >= 0),
+        PRIMARY KEY (saved_hotel_id, night_date),
+        FOREIGN KEY (saved_hotel_id) REFERENCES saved_hotels (saved_hotel_id)
+            ON UPDATE RESTRICT ON DELETE CASCADE
+    )
+    """,
 )
 
 CSV_HEADERS = {
@@ -78,7 +111,10 @@ def connect_database(
 
     resolved_path = Path(database_path)
     resolved_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(resolved_path)
+    # FastAPI may enter and exit a synchronous generator dependency on
+    # different worker threads. Each request still owns one connection, so
+    # cross-thread cleanup is safe and avoids sqlite3.ProgrammingError.
+    connection = sqlite3.connect(resolved_path, check_same_thread=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
 

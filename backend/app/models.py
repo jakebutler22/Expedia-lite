@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -49,11 +49,78 @@ class Hotel(BaseModel):
     categories: list[str] | None = None
 
 
+class SavedProviderHotel(Hotel):
+    address: str | None = None
+
+
 class HotelSearchResponse(BaseModel):
     search_center: ZipLocationResponse
     radius_meters: int
     count: int
     hotels: list[Hotel]
+
+
+class SavedHotelCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    searched_zip: str = Field(min_length=1)
+    hotel: SavedProviderHotel
+
+
+class DemoHotelNight(BaseModel):
+    date: str
+    nightly_rate_cents: int
+    rooms_available: int
+
+
+class SavedHotel(BaseModel):
+    place_id: str
+    name: str
+    address: str
+    latitude: float
+    longitude: float
+    searched_zips: list[str]
+    nights: list[DemoHotelNight]
+
+
+class SavedHotelLookupResponse(BaseModel):
+    zip: str
+    count: int
+    hotels: list[SavedHotel]
+
+
+class SavedHotelDeleteResponse(BaseModel):
+    place_id: str
+    deleted: bool
+
+
+class HotelInsightQuestion(BaseModel):
+    question: str
+
+
+class HotelInsightTrace(BaseModel):
+    model: str
+    proposed_sql: str | None
+    validation_status: Literal["not_run", "passed", "rejected"]
+    query_executed: bool
+    retrieved_records: list[dict[str, Any]]
+    second_request_sent: bool
+
+
+class HotelInsightResponse(BaseModel):
+    status: Literal[
+        "answer",
+        "no_matches",
+        "insufficient_data",
+        "rejected_query",
+    ]
+    question: str
+    count: int
+    records: list[dict[str, Any]]
+    answer: str | None = None
+    message: str | None = None
+    model: str | None = None
+    trace: HotelInsightTrace
 
 
 class User(BaseModel):

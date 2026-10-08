@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Expedia Lite — early saved-hotel insights mockup</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; color: #17233f; background: #eef3fb; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 32px 18px; }
+      main { max-width: 1100px; margin: auto; }
+      .note { padding: 14px 18px; border: 2px solid #7857d6; border-radius: 14px; background: #f4f0ff; }
+      .eyebrow { margin: 0 0 6px; color: #6042bd; font-size: .78rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+      h1, h2, p { margin-top: 0; }
+      .existing, .chat { margin-top: 18px; padding: 22px; border: 1px solid #cbd6e8; border-radius: 18px; background: white; box-shadow: 0 12px 30px #24355c12; }
+      .existing-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+      .hotel { padding: 13px; border: 2px solid #2968c8; border-radius: 12px; background: #f0f7ff; }
+      .map { min-height: 135px; display: grid; place-items: center; border-radius: 12px; color: #40516e; background: repeating-linear-gradient(45deg,#dce9e2,#dce9e2 12px,#e8f2ec 12px,#e8f2ec 24px); }
+      form { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+      input, button { min-height: 44px; border-radius: 9px; font: inherit; }
+      input { padding: 0 12px; border: 1px solid #93a4c0; }
+      button { padding: 0 16px; border: 0; color: white; background: #245fc1; font-weight: 750; cursor: pointer; }
+      button:focus-visible, input:focus-visible { outline: 3px solid #ffbd3c; outline-offset: 2px; }
+      .examples { margin: 10px 0 14px; color: #55647d; font-size: .92rem; }
+      .states { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+      .states button { min-height: 36px; background: #e8eef8; color: #1d355c; font-size: .86rem; }
+      .states button[aria-pressed="true"] { background: #6042bd; color: white; }
+      .state { display: none; padding: 16px; border: 1px solid #cbd6e8; border-radius: 12px; background: #f8fafc; }
+      .state.active { display: block; }
+      .status { font-weight: 800; }
+      .loading::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 9px; border: 3px solid #b7c5dc; border-top-color: #6042bd; border-radius: 50%; vertical-align: -3px; }
+      .source { margin-top: 12px; padding: 11px; border-left: 4px solid #2c7d63; background: white; }
+      .warning { border-color: #d99024; background: #fff8e8; }
+      .error { border-color: #c84b51; background: #fff0f1; }
+      footer { margin-top: 18px; color: #61708a; font-size: .88rem; }
+      @media (max-width: 700px) { .existing-grid, form { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="note" aria-labelledby="mockup-title">
+        <p class="eyebrow">Early mockup — not production UI</p>
+        <h1 id="mockup-title">Expedia Lite saved-hotel insights</h1>
+        <p>This wireframe was saved on October 7, 2026, before chatbot implementation. The local hotel storage foundation already existed. Use the state buttons to review the planned question, loading, answer, no-match, insufficient-data, and error presentations.</p>
+      </section>
+
+      <section class="existing" aria-labelledby="context-title">
+        <p class="eyebrow">Existing search context retained</p>
+        <h2 id="context-title">Saved locally near 02108</h2>
+        <div class="existing-grid">
+          <article class="hotel">
+            <strong>Harbor Example Hotel</strong>
+            <p>1 Example Street, Boston, MA</p>
+            <p><strong>Selected hotel</strong><br />Simulated course data: Oct 10 — $100.00, 20 rooms</p>
+          </article>
+          <div class="map" role="img" aria-label="Placeholder for the existing Leaflet map with one selected marker">Leaflet map + selected marker<br />Attribution remains visible</div>
+        </div>
+      </section>
+
+      <section class="chat" aria-labelledby="chat-title">
+        <p class="eyebrow">Planned RAG interface</p>
+        <h2 id="chat-title">Ask about saved hotel data</h2>
+        <form onsubmit="return false">
+          <label>
+            <span class="eyebrow">Question</span>
+            <input value="Which saved hotel has the lowest simulated rate on October 10?" aria-describedby="question-help" />
+          </label>
+          <button type="submit">Ask</button>
+        </form>
+        <p class="examples" id="question-help">Answers use saved provider locations plus simulated course rates and room counts. They do not represent real inventory or booking availability.</p>
+
+        <div class="states" aria-label="Mockup state preview">
+          <button type="button" aria-pressed="false" data-state="question">Question</button>
+          <button type="button" aria-pressed="false" data-state="loading">Loading</button>
+          <button type="button" aria-pressed="true" data-state="answer">Answer</button>
+          <button type="button" aria-pressed="false" data-state="no-matches">No matches</button>
+          <button type="button" aria-pressed="false" data-state="insufficient">Insufficient data</button>
+          <button type="button" aria-pressed="false" data-state="error">Error</button>
+        </div>
+
+        <div class="state" data-panel="question"><p class="status">Ready for a question.</p><p>Ask about locally saved hotels, searched ZIPs, or the simulated October 10–14 nightly data.</p></div>
+        <div class="state" data-panel="loading" role="status"><p class="status loading">Checking saved hotel facts and preparing an answer…</p></div>
+        <div class="state active" data-panel="answer" aria-live="polite">
+          <p class="status">Answer grounded in 1 saved hotel</p>
+          <p>Harbor Example Hotel has the lowest stored simulated rate for October 10: $100.00. This is classroom data, not a live price or proof of real availability.</p>
+          <div class="source"><strong>Evidence hotel — select in list/map</strong><br />Harbor Example Hotel · 1 Example Street · Oct 10: $100.00, 20 simulated rooms</div>
+        </div>
+        <div class="state warning" data-panel="no-matches" role="status"><p class="status">No saved hotels match this question.</p><p>Add a provider hotel to Local, or ask about a ZIP that has saved records.</p></div>
+        <div class="state warning" data-panel="insufficient" role="status"><p class="status">The saved data is not enough to answer that.</p><p>Ratings, amenities, real prices, live inventory, and booking details are not stored. Try asking about saved location, ZIP association, simulated dates, rates, or room counts.</p></div>
+        <div class="state error" data-panel="error" role="alert"><p class="status">Insights are unavailable right now.</p><p>The saved hotel search still works. Check the backend OpenRouter configuration or try the question again later.</p></div>
+      </section>
+
+      <footer>Design boundary: one question at a time, saved-hotel evidence only, no actual booking action, and no invented provider or inventory fields.</footer>
+    </main>
+    <script>
+      const buttons = [...document.querySelectorAll('[data-state]')]
+      const panels = [...document.querySelectorAll('[data-panel]')]
+      for (const button of buttons) {
+        button.addEventListener('click', () => {
+          for (const candidate of buttons) candidate.setAttribute('aria-pressed', String(candidate === button))
+          for (const panel of panels) panel.classList.toggle('active', panel.dataset.panel === button.dataset.state)
+        })
+      }
+    </script>
+  </body>
+</html>

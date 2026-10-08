@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 from contextlib import closing
 from pathlib import Path
 
@@ -8,6 +9,27 @@ from app.database import connect_database, initialize_database
 
 
 DATA_DIRECTORY = Path(__file__).resolve().parents[1] / "data"
+
+
+def test_request_connection_can_close_on_a_different_fastapi_worker_thread(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "expedia-lite.db"
+    initialize_database(database_path, DATA_DIRECTORY)
+    connection = connect_database(database_path)
+    errors: list[Exception] = []
+
+    def close_connection() -> None:
+        try:
+            connection.close()
+        except Exception as error:  # pragma: no cover - assertion records details
+            errors.append(error)
+
+    worker = threading.Thread(target=close_connection)
+    worker.start()
+    worker.join()
+
+    assert errors == []
 
 
 def test_new_database_seeds_all_csv_rows_with_ids_intact(tmp_path: Path) -> None:

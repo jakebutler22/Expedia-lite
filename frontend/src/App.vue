@@ -2,6 +2,14 @@
 import L from 'leaflet'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import 'leaflet/dist/leaflet.css'
+import {
+  HOTEL_RESULT_LABELS,
+  formatStoredRate,
+  removeHotelLocally,
+  saveHotelLocally,
+  searchHotelsLocalFirst,
+} from './hotelStorage.js'
+import { askHotelInsights } from './hotelInsights.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
@@ -29,8 +37,17 @@ const requestedZip = ref('')
 const hotelSearch = ref(null)
 const hotelSearchState = ref('ready')
 const hotelSearchError = ref('')
+const hotelResultSource = ref('')
 const selectedHotelId = ref('')
 const hotelMapElement = ref(null)
+const savedHotelsById = ref(new Map())
+const hotelMutationAction = ref('')
+const hotelMutationError = ref('')
+const hotelMutationFeedback = ref('')
+const insightQuestion = ref('')
+const insightState = ref('ready')
+const insightResult = ref(null)
+const insightError = ref('')
 
 const hotelListButtons = new Map()
 const hotelMarkers = new Map()
@@ -42,6 +59,19 @@ const selectedTraveler = computed(() =>
 
 const liveHotels = computed(() => hotelSearch.value?.hotels || [])
 const liveSearchLoading = computed(() => hotelSearchState.value === 'loading')
+const hotelResultLabel = computed(() => HOTEL_RESULT_LABELS[hotelResultSource.value] || '')
+const insightLoading = computed(() => insightState.value === 'loading')
+const insightColumns = computed(() => {
+  const columns = []
+  for (const record of insightResult.value?.records || []) {
+    for (const column of Object.keys(record)) {
+      if (!columns.includes(column)) {
+        columns.push(column)
+      }
+    }
+  }
+  return columns
+})
 
 const resultSummary = computed(() => {
   if (!searchedQuery.value || loading.value || error.value || message.value) {
@@ -77,6 +107,10 @@ async function getErrorMessage(response, fallback) {
 }
 
 function displayHotelLocation(hotel) {
+  if (hotel.address) {
+    return hotel.address
+  }
+
   if (hotel.formatted_address) {
     return hotel.formatted_address
   }
@@ -168,8 +202,63 @@ function selectLiveHotel(placeId, source) {
     }
   }
 
-  if (source === 'marker') {
-    hotelListButtons.get(placeId)?.scrollIntoView({ block: 'nearest' })
+  if (source === 'marker' || source === 'insight') {
+    hotelListButtons.get(placeId)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+}
+
+function resetHotelInsight() {
+  insightState.value = 'ready'
+  insightResult.value = null
+  insightError.value = ''
+}
+
+function insightHotelIsVisible(placeId) {
+  return liveHotels.value.some((hotel) => hotel.place_id === placeId)
+}
+
+function selectInsightHotel(placeId) {
+  if (insightHotelIsVisible(placeId)) {
+    selectLiveHotel(placeId, 'insight')
+  }
+}
+
+function insightColumnLabel(column) {
+  return column.replaceAll('_', ' ')
+}
+
+function formatInsightValue(column, value) {
+  if (value === null || value === undefined) {
+    return '—'
+  }
+  if (column.endsWith('_cents') && Number.isInteger(value)) {
+    return `${value} cents (${formatStoredRate(value)})`
+  }
+  return String(value)
+}
+
+async function askSavedHotelInsight() {
+  const question = insightQuestion.value.trim()
+  insightResult.value = null
+  insightError.value = ''
+
+  if (!question) {
+    insightState.value = 'invalid'
+    insightError.value = 'Enter a question about saved hotel data.'
+    return
+  }
+
+  insightState.value = 'loading'
+  try {
+    insightResult.value = await askHotelInsights({
+      apiUrl: API_URL,
+      question,
+    })
+    insightState.value = insightResult.value.status
+  } catch (requestError) {
+    insightState.value = 'failed'
+    insightError.value =
+      requestError.message || 'The saved hotel insights request could not be completed.'
   }
 }
 
@@ -179,10 +268,6 @@ function renderHotelMap() {
   }
 
   destroyHotelMap()
-  const center = L.latLng(
-    hotelSearch.value.search_center.latitude,
-    hotelSearch.value.search_center.longitude,
-  )
   hotelMap = L.map(hotelMapElement.value, {
     attributionControl: true,
     keyboard: true,
@@ -194,27 +279,35 @@ function renderHotelMap() {
     maxZoom: 19,
   }).addTo(hotelMap)
 
-  L.circle(center, {
-    radius: hotelSearch.value.radius_meters,
-    color: '#3150d8',
-    fillColor: '#6f86eb',
-    fillOpacity: 0.08,
-    interactive: false,
-    weight: 2,
-  }).addTo(hotelMap)
+  const bounds = L.latLngBounds([])
+  let center = null
+  if (hotelResultSource.value === 'api') {
+    center = L.latLng(
+      hotelSearch.value.search_center.latitude,
+      hotelSearch.value.search_center.longitude,
+    )
+    bounds.extend(center)
+    L.circle(center, {
+      radius: hotelSearch.value.radius_meters,
+      color: '#3150d8',
+      fillColor: '#6f86eb',
+      fillOpacity: 0.08,
+      interactive: false,
+      weight: 2,
+    }).addTo(hotelMap)
 
-  L.circleMarker(center, {
-    radius: 6,
-    color: '#151f4a',
-    fillColor: '#ffd500',
-    fillOpacity: 1,
-    interactive: false,
-    weight: 3,
-  })
-    .bindTooltip(`Search center for ZIP ${hotelSearch.value.search_center.postcode}`)
-    .addTo(hotelMap)
+    L.circleMarker(center, {
+      radius: 6,
+      color: '#151f4a',
+      fillColor: '#ffd500',
+      fillOpacity: 1,
+      interactive: false,
+      weight: 3,
+    })
+      .bindTooltip(`Search center for ZIP ${hotelSearch.value.search_center.postcode}`)
+      .addTo(hotelMap)
+  }
 
-  const bounds = L.latLngBounds([center])
   liveHotels.value.forEach((hotel, index) => {
     const marker = L.marker([hotel.latitude, hotel.longitude], {
       alt: `${hotel.name} map marker`,
@@ -244,7 +337,7 @@ function renderHotelMap() {
 
   if (liveHotels.value.length) {
     hotelMap.fitBounds(bounds, { maxZoom: 15, padding: [42, 42] })
-  } else {
+  } else if (center) {
     hotelMap.setView(center, 13)
   }
 
@@ -299,8 +392,13 @@ async function searchLiveHotels() {
   destroyHotelMap()
   hotelListButtons.clear()
   hotelSearch.value = null
+  hotelResultSource.value = ''
+  savedHotelsById.value = new Map()
   selectedHotelId.value = ''
   hotelSearchError.value = ''
+  hotelMutationAction.value = ''
+  hotelMutationError.value = ''
+  hotelMutationFeedback.value = ''
 
   if (!/^[0-9]{5}$/.test(postcode)) {
     hotelSearchState.value = 'invalid'
@@ -312,31 +410,114 @@ async function searchLiveHotels() {
   hotelSearchState.value = 'loading'
 
   try {
-    const response = await fetch(
-      `${API_URL}/api/hotels?zip=${encodeURIComponent(postcode)}`,
-    )
-    if (!response.ok) {
-      const detail = await getErrorMessage(response, 'The live hotel search returned an error.')
-      if (response.status === 400) {
-        hotelSearchState.value = 'invalid'
-      } else if (response.status === 404) {
-        hotelSearchState.value = 'unresolved'
-      } else {
-        hotelSearchState.value = 'failed'
-      }
-      hotelSearchError.value = detail
-      return
-    }
-
-    hotelSearch.value = await response.json()
+    const result = await searchHotelsLocalFirst({ apiUrl: API_URL, postcode })
+    hotelResultSource.value = result.source
+    hotelSearch.value = result.payload
+    savedHotelsById.value =
+      result.source === 'local'
+        ? new Map(result.payload.hotels.map((hotel) => [hotel.place_id, hotel]))
+        : new Map()
     selectedHotelId.value = hotelSearch.value.hotels[0]?.place_id || ''
     hotelSearchState.value = hotelSearch.value.count === 0 ? 'empty' : 'results'
     await nextTick()
     renderHotelMap()
-  } catch {
+  } catch (requestError) {
+    if (requestError.phase === 'local') {
+      hotelSearchState.value = 'local-failed'
+      hotelSearchError.value = requestError.message
+      return
+    }
+
+    if (requestError.phase === 'api') {
+      if (requestError.status === 400) {
+        hotelSearchState.value = 'invalid'
+      } else if (requestError.status === 404) {
+        hotelSearchState.value = 'unresolved'
+      } else {
+        hotelSearchState.value = 'failed'
+      }
+      hotelSearchError.value = requestError.message
+      return
+    }
+
     hotelSearchState.value = 'failed'
     hotelSearchError.value =
       'We could not complete the live hotel search. Confirm the backend is running and try again.'
+  }
+}
+
+function isHotelSaved(hotel) {
+  return savedHotelsById.value.has(hotel.place_id)
+}
+
+function savedHotelFor(hotel) {
+  return savedHotelsById.value.get(hotel.place_id)
+}
+
+async function addHotelToLocal(hotel) {
+  const action = `save:${hotel.place_id}`
+  hotelMutationAction.value = action
+  hotelMutationError.value = ''
+  hotelMutationFeedback.value = ''
+
+  try {
+    const savedHotel = await saveHotelLocally({
+      apiUrl: API_URL,
+      postcode: requestedZip.value,
+      hotel,
+    })
+    savedHotelsById.value = new Map(savedHotelsById.value).set(savedHotel.place_id, savedHotel)
+    hotelMutationFeedback.value = `${savedHotel.name} was saved locally.`
+    resetHotelInsight()
+  } catch (requestError) {
+    hotelMutationError.value = requestError.message || 'The hotel could not be saved locally.'
+  } finally {
+    hotelMutationAction.value = ''
+  }
+}
+
+async function removeHotelFromLocal(hotel) {
+  const action = `remove:${hotel.place_id}`
+  hotelMutationAction.value = action
+  hotelMutationError.value = ''
+  hotelMutationFeedback.value = ''
+
+  try {
+    await removeHotelLocally({ apiUrl: API_URL, placeId: hotel.place_id })
+    resetHotelInsight()
+    if (hotelResultSource.value === 'api') {
+      const nextSavedHotels = new Map(savedHotelsById.value)
+      nextSavedHotels.delete(hotel.place_id)
+      savedHotelsById.value = nextSavedHotels
+      hotelMutationFeedback.value = `${hotel.name} was removed from local storage.`
+      return
+    }
+
+    const remainingHotels = liveHotels.value.filter(
+      (candidate) => candidate.place_id !== hotel.place_id,
+    )
+    hotelSearch.value = {
+      ...hotelSearch.value,
+      count: remainingHotels.length,
+      hotels: remainingHotels,
+    }
+    savedHotelsById.value = new Map(
+      remainingHotels.map((savedHotel) => [savedHotel.place_id, savedHotel]),
+    )
+    selectedHotelId.value = remainingHotels[0]?.place_id || ''
+    hotelMutationFeedback.value = `${hotel.name} was removed from local storage.`
+
+    if (remainingHotels.length === 0) {
+      destroyHotelMap()
+      hotelSearchState.value = 'local-empty'
+    } else {
+      await nextTick()
+      renderHotelMap()
+    }
+  } catch (requestError) {
+    hotelMutationError.value = requestError.message || 'The saved hotel could not be removed.'
+  } finally {
+    hotelMutationAction.value = ''
   }
 }
 
@@ -543,12 +724,12 @@ onBeforeUnmount(destroyHotelMap)
       <section class="live-search" aria-labelledby="live-search-title">
         <div class="live-search-heading">
           <div>
-            <p class="eyebrow">Live Geoapify search</p>
+            <p class="eyebrow">Local-first hotel search</p>
             <h2 id="live-search-title">Hotels within 5 km of a U.S. ZIP</h2>
           </div>
           <p>
-            The backend confirms the requested postcode and returns nearby provider results without
-            exposing the Geoapify credential.
+            Saved hotels are checked first. Geoapify is requested only when no hotels are saved for
+            the ZIP, without exposing the provider credential.
           </p>
         </div>
 
@@ -590,7 +771,7 @@ onBeforeUnmount(destroyHotelMap)
             <span class="spinner" aria-hidden="true"></span>
             <div>
               <h3>Searching ZIP {{ requestedZip }}…</h3>
-              <p>Confirming the postcode, then checking a 5 km radius.</p>
+              <p>Checking local storage before requesting live hotel results.</p>
             </div>
           </div>
 
@@ -619,6 +800,18 @@ onBeforeUnmount(destroyHotelMap)
           </div>
 
           <div
+            v-else-if="hotelSearchState === 'local-failed'"
+            class="live-feedback-card live-feedback-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div>
+              <h3>Saved hotel lookup unavailable</h3>
+              <p>{{ hotelSearchError }} Live API fallback was not requested.</p>
+            </div>
+          </div>
+
+          <div
             v-else-if="hotelSearchState === 'failed'"
             class="live-feedback-card live-feedback-error"
             role="alert"
@@ -641,21 +834,41 @@ onBeforeUnmount(destroyHotelMap)
             </div>
           </div>
 
+          <div
+            v-else-if="hotelSearchState === 'local-empty'"
+            class="live-feedback-card"
+            role="status"
+          >
+            <span class="state-icon" aria-hidden="true">✓</span>
+            <div>
+              <h3>No saved hotels remain for ZIP {{ requestedZip }}</h3>
+              <p>Search this ZIP again to run a new local-first lookup.</p>
+            </div>
+          </div>
+
           <div v-else-if="hotelSearchState === 'results'" class="live-feedback-card" role="status">
             <span class="state-icon" aria-hidden="true">✓</span>
             <div>
               <h3>
                 {{ hotelSearch.count }}
                 {{ hotelSearch.count === 1 ? 'hotel' : 'hotels' }} near ZIP
-                {{ hotelSearch.search_center.postcode }}
+                {{ requestedZip }}
               </h3>
-              <p>
+              <p v-if="hotelResultSource === 'api'">
                 Search centered on
                 {{ displaySearchCenter(hotelSearch.search_center) }}.
               </p>
+              <p v-else>Loaded from the current committed local database values.</p>
             </div>
           </div>
         </div>
+
+        <p v-if="hotelMutationError" class="hotel-mutation-message is-error" role="alert">
+          {{ hotelMutationError }}
+        </p>
+        <p v-else-if="hotelMutationFeedback" class="hotel-mutation-message" role="status">
+          {{ hotelMutationFeedback }}
+        </p>
 
         <div
           v-if="hotelSearch && (hotelSearchState === 'results' || hotelSearchState === 'empty')"
@@ -664,14 +877,22 @@ onBeforeUnmount(destroyHotelMap)
           <section class="live-hotel-list" aria-labelledby="live-list-title">
             <div class="live-panel-heading">
               <div>
-                <p class="eyebrow">Provider results</p>
+                <p class="eyebrow result-source-label">{{ hotelResultLabel }}</p>
                 <h3 id="live-list-title">Hotel list</h3>
               </div>
-              <span>{{ hotelSearch.count }} within 5 km</span>
+              <span>
+                {{ hotelSearch.count }}
+                {{ hotelResultSource === 'api' ? 'within 5 km' : 'saved for this ZIP' }}
+              </span>
             </div>
 
             <ol v-if="liveHotels.length" class="live-hotel-results">
-              <li v-for="(hotel, index) in liveHotels" :key="hotel.place_id">
+              <li
+                v-for="(hotel, index) in liveHotels"
+                :key="hotel.place_id"
+                class="live-hotel-record"
+                :class="{ 'is-selected': selectedHotelId === hotel.place_id }"
+              >
                 <button
                   :id="`live-hotel-${index}`"
                   :ref="(element) => setHotelListButton(hotel.place_id, element)"
@@ -703,6 +924,49 @@ onBeforeUnmount(destroyHotelMap)
                     Selected
                   </span>
                 </button>
+
+                <div v-if="savedHotelFor(hotel)" class="saved-nightly-data">
+                  <p>Simulated classroom nightly rates and room counts</p>
+                  <div class="saved-nightly-table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Date</th>
+                          <th scope="col">Nightly rate</th>
+                          <th scope="col">Rooms available</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="night in savedHotelFor(hotel).nights" :key="night.date">
+                          <td>{{ formatDate(night.date) }}</td>
+                          <td>{{ formatStoredRate(night.nightly_rate_cents) }}</td>
+                          <td>{{ night.rooms_available }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="local-hotel-actions">
+                  <button
+                    v-if="hotelResultSource === 'api'"
+                    type="button"
+                    class="local-save-button"
+                    :disabled="isHotelSaved(hotel) || Boolean(hotelMutationAction)"
+                    @click="addHotelToLocal(hotel)"
+                  >
+                    {{ hotelMutationAction === `save:${hotel.place_id}` ? 'Saving…' : 'Add to Local' }}
+                  </button>
+                  <button
+                    v-if="isHotelSaved(hotel)"
+                    type="button"
+                    class="local-remove-button"
+                    :disabled="Boolean(hotelMutationAction)"
+                    @click="removeHotelFromLocal(savedHotelFor(hotel))"
+                  >
+                    {{ hotelMutationAction === `remove:${hotel.place_id}` ? 'Removing…' : 'Remove from Local' }}
+                  </button>
+                </div>
               </li>
             </ol>
 
@@ -715,18 +979,206 @@ onBeforeUnmount(destroyHotelMap)
           <section class="live-map-panel" aria-labelledby="live-map-title">
             <div class="live-panel-heading">
               <div>
-                <p class="eyebrow">Same result set</p>
+                <p class="eyebrow result-source-label">{{ hotelResultLabel }}</p>
                 <h3 id="live-map-title">Hotel map</h3>
               </div>
-              <span>Search radius: 5 km</span>
+              <span v-if="hotelResultSource === 'api'">Search radius: 5 km</span>
+              <span v-else>Stored coordinates</span>
             </div>
             <div
               ref="hotelMapElement"
               class="live-hotel-map"
               role="region"
-              :aria-label="`Map of ${hotelSearch.count} hotels near ZIP ${hotelSearch.search_center.postcode}`"
+              :aria-label="`Map of ${hotelSearch.count} hotels near ZIP ${requestedZip}`"
             ></div>
+            <p class="provider-attribution">
+              Location data: <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Powered by Geoapify</a>.
+              Map attribution remains visible inside the map.
+            </p>
           </section>
+        </div>
+      </section>
+
+      <section class="hotel-insights" aria-labelledby="hotel-insights-title">
+        <div class="insights-heading">
+          <div>
+            <p class="eyebrow">Business intelligence with RAG</p>
+            <h2 id="hotel-insights-title">Ask about saved hotel data</h2>
+          </div>
+          <p>
+            Answers use current saved provider locations and simulated October 10–14, 2026
+            classroom data. They are not live prices, real inventory, or booking information.
+          </p>
+        </div>
+
+        <form class="insights-form" @submit.prevent="askSavedHotelInsight">
+          <label for="insight-question">Question</label>
+          <div class="insights-question-row">
+            <textarea
+              id="insight-question"
+              v-model="insightQuestion"
+              name="insight-question"
+              rows="3"
+              maxlength="500"
+              placeholder="Which saved hotel has the lowest simulated rate on October 10?"
+              :disabled="insightLoading"
+            ></textarea>
+            <button type="submit" :disabled="insightLoading">
+              {{ insightLoading ? 'Checking saved data…' : 'Ask saved hotel insights' }}
+            </button>
+          </div>
+          <p class="insights-help">
+            Try a saved ZIP, hotel location, date, simulated nightly rate, or simulated room count.
+          </p>
+        </form>
+
+        <div class="insights-feedback" aria-live="polite">
+          <div v-if="insightState === 'ready'" class="insights-state">
+            <span class="state-icon" aria-hidden="true">?</span>
+            <div>
+              <h3>Ready for a saved-hotel question</h3>
+              <p>The backend asks for SQL, validates and runs it safely, then asks for an answer from the retrieved rows.</p>
+            </div>
+          </div>
+
+          <div v-else-if="insightState === 'loading'" class="insights-state" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <div>
+              <h3>Checking saved hotel facts…</h3>
+              <p>Running the two-request SQL validation and grounded-answer pipeline.</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="insightState === 'invalid'"
+            class="insights-state insights-state-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div><h3>Question needed</h3><p>{{ insightError }}</p></div>
+          </div>
+
+          <div
+            v-else-if="insightState === 'failed'"
+            class="insights-state insights-state-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div>
+              <h3>Saved hotel insights unavailable</h3>
+              <p>{{ insightError }}</p>
+              <p class="insights-boundary">The hotel search and local-storage features remain available.</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="insightState === 'no_matches'"
+            class="insights-state insights-state-warning"
+            role="status"
+          >
+            <span class="state-icon" aria-hidden="true">⌕</span>
+            <div><h3>No saved hotel matches</h3><p>{{ insightResult.message }}</p></div>
+          </div>
+
+          <div
+            v-else-if="insightState === 'insufficient_data'"
+            class="insights-state insights-state-warning"
+            role="status"
+          >
+            <span class="state-icon" aria-hidden="true">i</span>
+            <div>
+              <h3>Insufficient saved data</h3>
+              <p>{{ insightResult.message }}</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="insightState === 'rejected_query'"
+            class="insights-state insights-state-error"
+            role="alert"
+          >
+            <span class="state-icon" aria-hidden="true">!</span>
+            <div>
+              <h3>Generated query rejected</h3>
+              <p>{{ insightResult.message }}</p>
+              <p class="insights-boundary">No generated query ran and no second model request was sent.</p>
+            </div>
+          </div>
+
+          <article v-else-if="insightState === 'answer'" class="insights-answer">
+            <p class="eyebrow">Grounded answer</p>
+            <h3>Based on {{ insightResult.count }} retrieved {{ insightResult.count === 1 ? 'record' : 'records' }}</h3>
+            <p class="insights-answer-copy">{{ insightResult.answer }}</p>
+            <p class="insights-model">Model used for both requests: {{ insightResult.model }}</p>
+          </article>
+        </div>
+
+        <div
+          v-if="insightResult?.trace"
+          class="insights-evidence"
+          aria-labelledby="insights-evidence-title"
+        >
+          <div class="insights-evidence-heading">
+            <div>
+              <p class="eyebrow">RAG execution trace</p>
+              <h3 id="insights-evidence-title">Two requests with validated SQL between them</h3>
+            </div>
+            <span>{{ insightResult.count }} retrieved record{{ insightResult.count === 1 ? '' : 's' }}</span>
+          </div>
+
+          <ol class="insights-trace-steps">
+            <li>
+              <strong>1. SQL-generation model request</strong>
+              <span>Model: {{ insightResult.trace.model }}</span>
+            </li>
+            <li>
+              <strong>2. SQL safety validation</strong>
+              <span>Status: {{ insightResult.trace.validation_status }}</span>
+              <pre v-if="insightResult.trace.proposed_sql"><code>{{ insightResult.trace.proposed_sql }}</code></pre>
+            </li>
+            <li>
+              <strong>3. Bounded database execution</strong>
+              <span>{{ insightResult.trace.query_executed ? 'Executed after validation' : 'Not executed' }}</span>
+            </li>
+            <li>
+              <strong>4. Grounded-answer model request</strong>
+              <span>{{ insightResult.trace.second_request_sent ? 'Sent with the exact records below' : 'Not sent' }}</span>
+            </li>
+          </ol>
+
+          <div v-if="insightResult.records.length" class="saved-nightly-table-wrap insights-records-table">
+            <table>
+              <caption>Exact retrieved records — simulated course data, not live hotel inventory</caption>
+              <thead>
+                <tr>
+                  <th v-for="column in insightColumns" :key="column" scope="col">
+                    {{ insightColumnLabel(column) }}
+                  </th>
+                  <th scope="col">Map/list</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(record, index) in insightResult.records" :key="`${record.provider_place_id || 'record'}-${index}`">
+                  <td v-for="column in insightColumns" :key="column">
+                    {{ formatInsightValue(column, record[column]) }}
+                  </td>
+                  <td>
+                    <button
+                      v-if="typeof record.provider_place_id === 'string'"
+                      type="button"
+                      class="insight-select-button"
+                      :disabled="!insightHotelIsVisible(record.provider_place_id)"
+                      @click="selectInsightHotel(record.provider_place_id)"
+                    >
+                      {{ insightHotelIsVisible(record.provider_place_id) ? 'Select in list and map' : 'Not in current ZIP results' }}
+                    </button>
+                    <span v-else>Not applicable</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-else class="insights-empty-records">The validated query returned zero records.</p>
         </div>
       </section>
 

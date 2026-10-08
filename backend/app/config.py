@@ -24,3 +24,37 @@ def geoapify_api_key_status() -> str:
     if get_geoapify_api_key() is None:
         return "key is not configured"
     return "key is configured"
+
+
+def get_openrouter_api_key() -> str | None:
+    """Return the configured OpenRouter key for backend-only use."""
+    value = os.getenv("OPENROUTER_API_KEY")
+    if value is None:
+        return None
+    normalized_value = value.strip()
+    return normalized_value or None
+
+
+def get_openrouter_model() -> str | None:
+    """Return the explicit course-provided OpenRouter model setting."""
+    value = os.getenv("OPENROUTER_MODEL")
+    if value is None:
+        return None
+    normalized_value = value.strip()
+    return normalized_value or None
+
+
+def openrouter_configuration_status() -> dict[str, str]:
+    """Describe OpenRouter configuration without exposing either value."""
+    return {
+        "openrouter_api_key_status": (
+            "key is configured"
+            if get_openrouter_api_key() is not None
+            else "key is not configured"
+        ),
+        "openrouter_model_status": (
+            "model is configured"
+            if get_openrouter_model() is not None
+            else "model is not configured"
+        ),
+    }
